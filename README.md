@@ -1,0 +1,226 @@
+# AirLock — Enterprise Identity & Access Management (IAM) Platform
+
+<div align="center">
+
+![AirLock Banner](https://img.shields.io/badge/AirLock-Enterprise%20IAM%20v2.0-2563EB?style=for-the-badge&logo=shield&logoColor=white)
+<br />
+<br />
+
+[![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4_OKLCH-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Radix UI](https://img.shields.io/badge/Radix_UI-Primitives-161618?style=flat-square&logo=radix-ui)](https://www.radix-ui.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Maintenance](https://img.shields.io/badge/Maintained%20by-Srinivas%20Jangiti-2563EB?style=flat-square)](https://github.com/srinivasjangiti)
+
+<p align="center">
+  <strong>Control who gets in, what they access, and when.</strong><br>
+  A modern, zero-trust Identity Governance & Access Management (IAM) suite with automated SaaS provisioning, real-time RBAC/ABAC policy simulation, Just-In-Time (JIT) ephemeral session grants, and immutable compliance audit trails.
+</p>
+
+[Explore Features](#-key-features) • [System Architecture](#-system-architecture) • [Getting Started](#-getting-started) • [IAM Policy Simulator](#-iam-policy-simulator) • [Creator Profile](#-creator--maintainer)
+
+</div>
+
+---
+
+## 🌟 Executive Overview
+
+Modern engineering organizations operate across dozens of disparate tools: GitHub organizations, AWS accounts, Slack workspaces, Google Workspace domains, and monitoring clusters. In traditional teams, provisioning and offboarding are manual, error-prone, and slow.
+
+**AirLock** eliminates access sprawl by centralizing identity management, policy enforcement, and auditability into a single pane of glass:
+- **Unified Identity Directory**: Manage employees, contractors, and service accounts with granular role delegation.
+- **Multi-Tool SaaS Connectors**: One-click provisioning for GitHub, Slack, AWS IAM Identity Center, Google Workspace, Datadog, Jira, and Figma.
+- **Zero-Trust Policy Engine & Simulator**: Test and verify complex permissions (`ALLOW` / `DENY`) across users, resources, and actions before deploying.
+- **Just-In-Time (JIT) Ephemeral Grants**: Issue self-expiring, time-limited break-glass access (1h, 4h, 24h, 7d) to minimize attack surfaces.
+- **Forensic Audit Activity Log**: Immutable event logs with real-time severity scoring and one-click RFC-compliant CSV export for SOC 2 and ISO 27001 readiness.
+- **Frictionless Sandbox Mode**: Zero setup barriers—explore the full interactive dashboard immediately via persistent client-side state without external API dependencies.
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client ["Client & Browser Application"]
+        UI["Modern Next.js 16 + React 19 UI\n(Tailwind CSS v4 + Radix UI Primitives)"]
+        Store["Reactive IAM Store\n(localStorage Synchronized Engine)"]
+        Simulator["Zero-Trust Policy Simulator\n(Deterministic Decision Tree)"]
+    end
+
+    subgraph Auth ["Identity & Session Governance"]
+        Clerk["Enterprise Clerk SSO / Auth\n(with Sandbox Demo Fallback)"]
+        Middleware["Zero-Friction Route Protection\n(clerkMiddleware + Sandbox Bypass)"]
+    end
+
+    subgraph PolicyEngine ["AirLock Policy Evaluation Core"]
+        StatusCheck{"Account Status Active?"}
+        JitCheck{"Active JIT Grant\nNon-Expired?"}
+        RbacCheck{"Tool Allowed by Role Policy?"}
+        MfaCheck{"MFA Requirement Satisfied?"}
+        DecisionAllow["ALLOW (Access Granted)"]
+        DecisionDeny["DENY (Access Blocked)"]
+    end
+
+    subgraph Connectors ["SaaS & Cloud Integration Mesh"]
+        GitHub["🐙 GitHub Enterprise"]
+        AWS["☁️ AWS IAM Center"]
+        Slack["💬 Slack Enterprise Grid"]
+        Google["🔵 Google Workspace"]
+        Datadog["🐶 Datadog APM"]
+        Jira["📋 Jira Software"]
+    end
+
+    UI --> Store
+    Store --> Simulator
+    Middleware --> UI
+    Clerk -.-> Middleware
+
+    Simulator --> StatusCheck
+    StatusCheck -- No --> DecisionDeny
+    StatusCheck -- Yes --> JitCheck
+    JitCheck -- Yes (Elevated Bypass) --> DecisionAllow
+    JitCheck -- No --> RbacCheck
+    RbacCheck -- No --> DecisionDeny
+    RbacCheck -- Yes --> MfaCheck
+    MfaCheck -- No --> DecisionDeny
+    MfaCheck -- Yes --> DecisionAllow
+
+    Store -. Provisions .-> Connectors
+```
+
+---
+
+## 🚀 Key Features
+
+### 1. 👥 Team Directory & CSV Bulk Onboarding
+- Search, filter, and inspect team members by security role, department, MFA enrollment, and assigned SaaS tools.
+- **Native CSV Parser**: Drag-and-drop or paste bulk CSV files (`Name,Email,Role,Department,Integrations`) to onboard dozens of team members simultaneously with live schema validation.
+- One-click account suspension and instant offboarding revocation.
+
+### 2. ⚡ Just-In-Time (JIT) Ephemeral Access
+- Eliminate standing administrative privileges by issuing time-bounded access passes with automated expiration.
+- Custom grant durations (1 hour, 4 hours, 8 hours, 24 hours, or 7 days).
+- Real-time countdown tracking, manual emergency revocation, and automated compliance logging.
+
+### 3. 🎯 Interactive IAM Policy Simulator
+- An enterprise-grade evaluation sandbox to test permission policies before assigning them in production.
+- Select any team member, target service, and action string (e.g. `aws:execute-production-migration`, `github:force-push`).
+- Visual zero-trust verification stages showing account verification, JIT bypass check, RBAC tool whitelisting, and hardware MFA enforcement.
+
+### 4. 🔌 SaaS & Cloud Connector Catalog
+- Pre-configured connectors for **GitHub**, **Slack**, **AWS IAM Identity Center**, **Google Workspace**, **Datadog**, **Jira**, **Figma**, and **Notion**.
+- Live directory sync triggers, member allocation metrics, and permission scope cards.
+
+### 5. 📜 Immutable Forensic Audit Log
+- Centralized event tracking for member invites, role transitions, connector status shifts, policy evaluations, and JIT sessions.
+- Categorized severity tiers: `critical`, `warning`, `success`, and `info`.
+- **RFC-Compliant CSV Export**: Instant one-click export of the entire audit trail with timestamps, actors, targets, and originating IP addresses.
+
+### 6. 🎨 High-Aesthetic Design System
+- Built with **Tailwind CSS v4** and modern **OKLCH** color tokens.
+- Native Dark / Light / System theme switching powered by `next-themes`.
+- Accessible component primitives built upon **Radix UI** with custom micro-animations.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Framework** | [Next.js 16 (App Router)](https://nextjs.org/) & [React 19](https://react.dev/) |
+| **Language** | [TypeScript 5](https://www.typescriptlang.org/) |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) with OKLCH Color Model & CSS Variables |
+| **Components** | [Radix UI](https://www.radix-ui.com/) primitives (`@radix-ui/react-*`) |
+| **Icons** | [Lucide React](https://lucide.dev/) |
+| **Auth** | [Clerk Authentication](https://clerk.com/) with Zero-Dependency Sandbox Fallback |
+| **Theming** | [next-themes](https://github.com/pacocoursey/next-themes) |
+| **Build Tooling** | Turbopack & React Compiler (`babel-plugin-react-compiler`) |
+
+---
+
+## 🏁 Getting Started
+
+### Prerequisites
+- Node.js 18.18+ or 20+ installed
+- npm, yarn, or pnpm
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/srinivasjangiti/airlock.git
+   cd airlock
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables (Optional):**
+   AirLock works straight out of the box in full **Sandbox Demo Mode** without any keys. If you wish to enable Clerk for multi-tenant production authentication:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Populate your Clerk API keys in `.env.local`:
+   ```env
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
+   ```
+
+4. **Run the local development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000) to view the landing page, or [http://localhost:3000/dashboard](http://localhost:3000/dashboard) to jump directly into the interactive governance sandbox!
+
+---
+
+## 🧪 Verification & Build
+
+To check types and compile for production:
+```bash
+# Type check and build Next.js production bundle
+npm run build
+
+# Start production server
+npm run start
+```
+
+---
+
+## 👨‍💻 Creator & Maintainer
+
+<div align="center">
+
+### **Srinivas Jangiti**
+*Software Engineer & Systems Architect*
+
+[![GitHub](https://img.shields.io/badge/GitHub-srinivasjangiti-181717?style=for-the-badge&logo=github)](https://github.com/srinivasjangiti)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-srinivasajan-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/srinivasajan/)
+[![X](https://img.shields.io/badge/X-@sriwanders-000000?style=for-the-badge&logo=x)](https://x.com/sriwanders)
+[![Substack](https://img.shields.io/badge/Substack-@sriwanders-FF6719?style=for-the-badge&logo=substack)](https://substack.com/@sriwanders)
+[![Medium](https://img.shields.io/badge/Medium-@sriwanders-12100E?style=for-the-badge&logo=medium)](https://medium.com/@sriwanders)
+[![YouTube](https://img.shields.io/badge/YouTube-@srinivasjan-FF0000?style=for-the-badge&logo=youtube)](https://www.youtube.com/@srinivasjan)
+[![LeetCode](https://img.shields.io/badge/LeetCode-srinivasaj-FFA116?style=for-the-badge&logo=leetcode)](https://leetcode.com/u/srinivasaj/)
+
+<br />
+
+📬 **Email**: [srinivasajan.work@gmail.com](mailto:srinivasajan.work@gmail.com)  
+📱 **Mobile**: [+91 8767505121](tel:+918767505121)
+
+</div>
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+```
+Copyright (c) 2026 Srinivas Jangiti
+```
