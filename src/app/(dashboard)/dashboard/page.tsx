@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/header";
 import {
   Users,
@@ -14,29 +15,47 @@ import {
   ExternalLink,
   CheckCircle2,
   Lock,
+  Terminal,
+  AlertTriangle,
+  X,
+  FileCheck,
+  TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { useAirlockStore } from "@/lib/airlock-store";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
-  const { store } = useAirlockStore();
+  const { store, enforceMfaAll } = useAirlockStore();
+  const [alertDismissed, setAlertDismissed] = useState(false);
 
   const totalMembers = store.members.length;
   const activeMembers = store.members.filter((m) => m.status === "active").length;
+  const mfaCount = store.members.filter((m) => m.mfaEnabled).length;
+  const mfaPercentage = totalMembers > 0 ? Math.round((mfaCount / totalMembers) * 100) : 100;
   const activeIntegrations = store.integrations.filter((i) => i.status === "connected").length;
   const activeJitGrants = store.jitGrants.filter((g) => g.status === "active").length;
   const securityEventsCount = store.activities.length;
+  const activeApiKeys = (store.apiKeys || []).filter((k) => k.status === "active").length;
 
   const adminFirstName = store.organization.adminName.split(" ")[0] || "there";
+
+  // Role Breakdown
+  const roleCounts: Record<string, number> = {};
+  store.members.forEach((m) => {
+    roleCounts[m.role] = (roleCounts[m.role] || 0) + 1;
+  });
 
   const STATS = [
     {
       title: "Team Members",
       value: totalMembers.toString(),
-      sub: `${activeMembers} active · ${totalMembers - activeMembers} pending/suspended`,
+      sub: `${activeMembers} active · ${mfaPercentage}% MFA enrolled`,
       icon: Users,
       color: "text-indigo-500",
       bg: "bg-indigo-500/10",
@@ -54,7 +73,7 @@ export default function DashboardPage() {
     {
       title: "JIT Active Grants",
       value: activeJitGrants.toString(),
-      sub: "Time-limited elevated access sessions",
+      sub: "Time-limited ephemeral access sessions",
       icon: Clock,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
@@ -63,7 +82,7 @@ export default function DashboardPage() {
     {
       title: "Security & Audit Events",
       value: securityEventsCount.toString(),
-      sub: "Monitored policy events & access logs",
+      sub: "Immutable tamper-evident activity log",
       icon: Activity,
       color: "text-blue-500",
       bg: "bg-blue-500/10",
@@ -71,38 +90,17 @@ export default function DashboardPage() {
     },
   ];
 
-  const SETUP_STEPS = [
-    {
-      step: 1,
-      title: "Explore Connected Tools",
-      description: "Manage GitHub, Slack, AWS, and Google Workspace provisioning policies.",
-      cta: "Configure Integrations",
-      href: "/integrations",
-      icon: Puzzle,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
-    },
-    {
-      title: "Simulate Access & JIT Grants",
-      step: 2,
-      description: "Test permission evaluation (ALLOW/DENY) and grant temporary break-glass access.",
-      cta: "Open Policy Simulator",
-      href: "/access",
-      icon: ShieldCheck,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-    },
-    {
-      step: 3,
-      title: "Manage Members & CSV Import",
-      description: "Onboard new team members individually or in bulk via comma-separated files.",
-      cta: "View Directory",
-      href: "/members",
-      icon: UserPlus,
-      color: "text-indigo-500",
-      bg: "bg-indigo-500/10",
-    },
+  // 7-day access requests chart data
+  const ACCESS_TREND = [
+    { day: "Mon", allowed: 142, blocked: 8 },
+    { day: "Tue", allowed: 168, blocked: 12 },
+    { day: "Wed", allowed: 195, blocked: 5 },
+    { day: "Thu", allowed: 210, blocked: 14 },
+    { day: "Fri", allowed: 184, blocked: 9 },
+    { day: "Sat", allowed: 45, blocked: 3 },
+    { day: "Sun", allowed: 62, blocked: 2 },
   ];
+  const maxReq = Math.max(...ACCESS_TREND.map((d) => d.allowed + d.blocked));
 
   return (
     <>
@@ -111,15 +109,15 @@ export default function DashboardPage() {
         description={`Welcome back, ${adminFirstName}. All zero-trust access policies are actively enforced.`}
         actions={
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex gap-1.5">
+            <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex gap-1.5 text-xs">
               <Link href="/access">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                 Policy Simulator
               </Link>
             </Button>
-            <Button size="sm" asChild className="gap-1.5 shadow-sm">
+            <Button size="sm" asChild className="gap-1.5 shadow-sm text-xs">
               <Link href="/members">
-                <UserPlus className="h-4 w-4" />
+                <UserPlus className="h-3.5 w-3.5" />
                 Invite Member
               </Link>
             </Button>
@@ -127,14 +125,58 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="flex-1 p-6 space-y-8">
+      <div className="flex-1 p-6 space-y-6">
+        {/* Live Threat Detection & Anomaly Banner */}
+        {!alertDismissed && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all">
+            <div className="flex items-start gap-3">
+              <div className="h-8 w-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                  <span>Security Anomaly Flagged by AI Monitor</span>
+                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400 py-0">
+                    Low Severity
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                  Off-hours ephemeral access session initiated for <strong>Marcus Brody</strong> on AWS IAM Identity Center. Zero policy violations detected.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs border-amber-500/30 hover:bg-amber-500/20"
+                asChild
+              >
+                <Link href="/activity">Inspect Audit Trail</Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setAlertDismissed(true);
+                  toast.info("Security alert acknowledged.");
+                }}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {STATS.map((stat) => {
             const Icon = stat.icon;
             return (
               <Link key={stat.title} href={stat.href} className="group block">
-                <Card className="hover:border-primary/40 transition-colors h-full">
+                <Card className="hover:border-primary/40 transition-colors h-full shadow-xs">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-3">
                       <div className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${stat.bg}`}>
@@ -152,51 +194,146 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* Quick Launchpad */}
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-foreground">Governance Launchpad</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Core workflows to manage identity lifecycle, temporary grants, and compliance.
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {SETUP_STEPS.map((s) => {
-              const Icon = s.icon;
-              return (
-                <Card key={s.step} className="group hover:border-primary/40 transition-colors flex flex-col justify-between">
-                  <CardContent className="p-6 flex flex-col gap-4 h-full">
-                    <div className="flex items-start justify-between">
-                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${s.bg}`}>
-                        <Icon className={`h-5 w-5 ${s.color}`} />
+        {/* Analytics Grid: 7-Day Access Requests Trend & Role Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* 7-Day Access Requests Chart */}
+          <Card className="lg:col-span-8 border-border shadow-xs">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    7-Day Access Evaluations & Traffic
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Automated RBAC/ABAC policy decisions across SaaS applications
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="h-2 w-2 rounded-full bg-primary" /> Allowed
+                  </span>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="h-2 w-2 rounded-full bg-destructive" /> Blocked
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="h-44 w-full flex items-end justify-between gap-3 pt-4 px-2">
+                {ACCESS_TREND.map((item, idx) => {
+                  const allowedHeight = Math.round((item.allowed / maxReq) * 120);
+                  const blockedHeight = Math.max(Math.round((item.blocked / maxReq) * 120), 4);
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                      <div className="text-[10px] font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                        {item.allowed + item.blocked}
                       </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground bg-muted rounded-full px-2.5 py-0.5">
-                        Feature {s.step}
+                      <div className="w-full max-w-[32px] flex flex-col gap-1 items-center justify-end h-32">
+                        <div
+                          style={{ height: `${blockedHeight}px` }}
+                          className="w-full rounded-xs bg-destructive/70 group-hover:bg-destructive transition-colors"
+                          title={`${item.blocked} Blocked`}
+                        />
+                        <div
+                          style={{ height: `${allowedHeight}px` }}
+                          className="w-full rounded-t-xs bg-primary/80 group-hover:bg-primary transition-colors"
+                          title={`${item.allowed} Allowed`}
+                        />
+                      </div>
+                      <span className="text-[11px] font-medium text-muted-foreground">{item.day}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Department & Role Breakdown */}
+          <Card className="lg:col-span-4 border-border shadow-xs flex flex-col justify-between">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Privilege Distribution
+              </CardTitle>
+              <CardDescription className="text-xs">
+                RBAC role allocation across {totalMembers} team members
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 flex-1 flex flex-col justify-center">
+              {Object.entries(roleCounts).slice(0, 5).map(([role, count]) => {
+                const pct = Math.round((count / totalMembers) * 100);
+                return (
+                  <div key={role} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">{role}</span>
+                      <span className="text-muted-foreground font-mono text-[11px]">
+                        {count} ({pct}%)
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{s.description}</p>
+                    <Progress value={pct} className="h-1.5" />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Hub Cards: Compliance & Developer API */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/compliance" className="group block">
+            <Card className="hover:border-primary/40 transition-colors shadow-xs h-full bg-gradient-to-r from-card via-card to-emerald-500/5">
+              <CardContent className="p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-foreground">Compliance & SOC 2 Readiness</span>
+                      <Badge variant="outline" className="text-[10px] text-emerald-500 border-emerald-500/30">
+                        94% Score
+                      </Badge>
                     </div>
-                    <Button variant="outline" size="sm" className="gap-1.5 w-full group-hover:border-primary/40" asChild>
-                      <Link href={s.href}>
-                        {s.cta}
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Auditor-ready continuous verification for SOC 2 Type II, ISO 27001, and HIPAA.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/developers" className="group block">
+            <Card className="hover:border-primary/40 transition-colors shadow-xs h-full bg-gradient-to-r from-card via-card to-primary/5">
+              <CardContent className="p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Terminal className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-foreground">Developer API & Webhooks</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {activeApiKeys} Active Keys
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Programmatic IAM evaluation, CI/CD tokens, and Terraform provider integration.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Two-Column Grid: Active JIT Sessions & Live Security Activity Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Active JIT Temporary Grants Card */}
-          <Card>
+          <Card className="shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -257,7 +394,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Real-time Activity Feed Card */}
-          <Card>
+          <Card className="shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">

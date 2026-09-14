@@ -7,6 +7,8 @@ import {
   Users,
   Puzzle,
   ShieldCheck,
+  ShieldAlert,
+  Terminal,
   Activity,
   Settings,
   Shield,
@@ -35,6 +37,8 @@ const navItems = [
   { href: "/members", icon: Users, label: "Members Directory" },
   { href: "/integrations", icon: Puzzle, label: "Tool Integrations" },
   { href: "/access", icon: ShieldCheck, label: "Access & Simulator" },
+  { href: "/compliance", icon: ShieldAlert, label: "Compliance & SOC 2" },
+  { href: "/developers", icon: Terminal, label: "Developer API & Keys" },
   { href: "/activity", icon: Activity, label: "Audit Activity Log" },
 ];
 

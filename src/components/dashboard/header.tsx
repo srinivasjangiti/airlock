@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CommandPalette } from "@/components/dashboard/command-palette";
 import { useAirlockStore } from "@/lib/airlock-store";
 import { useState } from "react";
 
@@ -35,33 +36,49 @@ export function DashboardHeader({ title, description, actions }: DashboardHeader
   const recentNotifications = store.activities.slice(0, 4);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border px-6 bg-background/95 backdrop-blur-sm sticky top-0 z-30">
-      <div>
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-lg font-bold tracking-tight">{title}</h1>
-          <Badge variant="outline" className="text-[10px] uppercase font-semibold text-primary border-primary/30 hidden sm:inline-flex">
-            Sandbox Active
-          </Badge>
+    <>
+      <CommandPalette />
+      <header className="flex h-16 items-center justify-between border-b border-border px-6 bg-background/95 backdrop-blur-sm sticky top-0 z-30">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-lg font-bold tracking-tight">{title}</h1>
+            <Badge variant="outline" className="text-[10px] uppercase font-semibold text-primary border-primary/30 hidden sm:inline-flex">
+              Sandbox Active
+            </Badge>
+          </div>
+          {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
         </div>
-        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
-      </div>
 
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Quick Demo Data Seed / Reset */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleResetDemo}
-          disabled={resetting}
-          title="Reset sample enterprise data"
-          className="text-xs h-8 gap-1.5 border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-foreground hidden lg:inline-flex"
-        >
-          <RefreshCw className={`h-3 w-3 ${resetting ? "animate-spin text-primary" : ""}`} />
-          {resetting ? "Resetting..." : "Reset Demo Data"}
-        </Button>
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Quick Search & Command Palette trigger */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-command-palette"))}
+            className="h-8 gap-2 text-xs border-border bg-muted/40 text-muted-foreground hover:text-foreground hidden md:inline-flex px-2.5 rounded-lg"
+          >
+            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden lg:inline">Search or command...</span>
+            <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border bg-card px-1 font-mono text-[9px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>
+          </Button>
 
-        {/* Theme Toggle */}
-        <ThemeToggle />
+          {/* Quick Demo Data Seed / Reset */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResetDemo}
+            disabled={resetting}
+            title="Reset sample enterprise data"
+            className="text-xs h-8 gap-1.5 border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-foreground hidden lg:inline-flex"
+          >
+            <RefreshCw className={`h-3 w-3 ${resetting ? "animate-spin text-primary" : ""}`} />
+            {resetting ? "Resetting..." : "Reset Demo Data"}
+          </Button>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
         {/* Notifications */}
         <DropdownMenu>
@@ -97,5 +114,6 @@ export function DashboardHeader({ title, description, actions }: DashboardHeader
         {actions}
       </div>
     </header>
+    </>
   );
 }

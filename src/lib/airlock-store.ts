@@ -86,7 +86,11 @@ export type ActivityType =
   | "policy_simulation"
   | "security_alert"
   | "bulk_import"
-  | "audit_export";
+  | "audit_export"
+  | "api_key_created"
+  | "api_key_revoked"
+  | "compliance_remediation"
+  | "access_certified";
 
 export type Activity = {
   id: string;
@@ -99,6 +103,18 @@ export type Activity = {
   integration?: string;
   ipAddress?: string;
   severity: "info" | "warning" | "critical" | "success";
+};
+
+export type ApiKey = {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  maskedKey: string;
+  scopes: string[];
+  role: MemberRole;
+  createdAt: string;
+  lastUsed: string;
+  status: "active" | "revoked";
 };
 
 export type AirlockStoreData = {
@@ -115,6 +131,7 @@ export type AirlockStoreData = {
   policies: AccessPolicy[];
   jitGrants: TimeLimitedGrant[];
   activities: Activity[];
+  apiKeys: ApiKey[];
 };
 
 const INITIAL_MEMBERS: Member[] = [
@@ -485,6 +502,42 @@ const INITIAL_ACTIVITIES: Activity[] = [
   },
 ];
 
+const INITIAL_API_KEYS: ApiKey[] = [
+  {
+    id: "key-1",
+    name: "Production Terraform IAM Provider",
+    keyPrefix: "airlock_live_tf",
+    maskedKey: "airlock_live_tf_9f83a8...b741",
+    scopes: ["iam:read", "iam:write", "access:evaluate"],
+    role: "DevOps",
+    createdAt: "2026-02-10",
+    lastUsed: "5 mins ago",
+    status: "active",
+  },
+  {
+    id: "key-2",
+    name: "SecOps SIEM Audit Log Shipper (Datadog)",
+    keyPrefix: "airlock_live_siem",
+    maskedKey: "airlock_live_siem_41c0ea...99e2",
+    scopes: ["audit:export", "logs:query"],
+    role: "SecOps",
+    createdAt: "2026-02-18",
+    lastUsed: "Just now",
+    status: "active",
+  },
+  {
+    id: "key-3",
+    name: "Slack Break-Glass Bot Dispatcher",
+    keyPrefix: "airlock_live_bot",
+    maskedKey: "airlock_live_bot_73da1f...28f0",
+    scopes: ["jit:create", "access:evaluate"],
+    role: "Admin",
+    createdAt: "2026-03-01",
+    lastUsed: "45 mins ago",
+    status: "active",
+  },
+];
+
 const STORAGE_KEY = "airlock_enterprise_store_v1";
 
 export function getInitialStore(): AirlockStoreData {
@@ -502,6 +555,7 @@ export function getInitialStore(): AirlockStoreData {
     policies: INITIAL_POLICIES,
     jitGrants: INITIAL_JIT_GRANTS,
     activities: INITIAL_ACTIVITIES,
+    apiKeys: INITIAL_API_KEYS,
   };
 }
 
@@ -514,7 +568,11 @@ export function loadStore(): AirlockStoreData {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
       return initial;
     }
-    return JSON.parse(raw) as AirlockStoreData;
+    const parsed = JSON.parse(raw) as AirlockStoreData;
+    if (!parsed.apiKeys || !Array.isArray(parsed.apiKeys) || parsed.apiKeys.length === 0) {
+      parsed.apiKeys = INITIAL_API_KEYS;
+    }
+    return parsed;
   } catch (err) {
     console.error("Failed to parse Airlock store from localStorage:", err);
     return getInitialStore();
@@ -563,6 +621,7 @@ export function clearStoreToClean(): AirlockStoreData {
         severity: "info",
       },
     ],
+    apiKeys: [],
   };
   saveStore(clean);
   return clean;
@@ -919,6 +978,141 @@ export function useAirlockStore() {
     };
   };
 
+  const createApiKey = (params: { name: string; scopes: string[]; role: MemberRole }) => {
+    const randomHex = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8);
+    const prefix = "airlock_live_" + params.name.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 8);
+    const newKey: ApiKey = {
+      id: `key-${Date.now()}`,
+      name: params.name,
+      keyPrefix: prefix,
+      maskedKey: `${prefix}_${randomHex.slice(0, 4)}...${randomHex.slice(-4)}`,
+      scopes: params.scopes,
+      role: params.role,
+      createdAt: new Date().toISOString().split("T")[0],
+      lastUsed: "Never",
+      status: "active",
+    };
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "api_key_created",
+      actor: store.organization.adminName,
+      actorEmail: store.organization.adminEmail,
+      target: params.name,
+      description: `Generated new scoped API key: "${params.name}" (${params.scopes.join(", ")}).`,
+      timestamp: "Just now",
+      severity: "warning",
+    };
+
+    const updated = {
+      ...store,
+      apiKeys: [newKey, ...(store.apiKeys || [])],
+      activities: [activity, ...store.activities],
+    };
+    saveStore(updated);
+    return newKey;
+  };
+
+  const revokeApiKey = (keyId: string) => {
+    const targetKey = (store.apiKeys || []).find((k) => k.id === keyId);
+    if (!targetKey) return;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "api_key_revoked",
+      actor: store.organization.adminName,
+      actorEmail: store.organization.adminEmail,
+      target: targetKey.name,
+      description: `Revoked API key: "${targetKey.name}" (${targetKey.keyPrefix}). Key access terminated immediately.`,
+      timestamp: "Just now",
+      severity: "critical",
+    };
+
+    const updated = {
+      ...store,
+      apiKeys: (store.apiKeys || []).map((k) => (k.id === keyId ? { ...k, status: "revoked" as const } : k)),
+      activities: [activity, ...store.activities],
+    };
+    saveStore(updated);
+  };
+
+  const enforceMfaAll = () => {
+    const nonMfaMembers = store.members.filter((m) => !m.mfaEnabled);
+    if (nonMfaMembers.length === 0) return 0;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "compliance_remediation",
+      actor: store.organization.adminName,
+      actorEmail: store.organization.adminEmail,
+      target: "Organization Directory",
+      description: `Enforced mandatory hardware/TOTP MFA on ${nonMfaMembers.length} non-compliant member(s) to meet SOC 2 CC6.6 & ISO 27001 requirements.`,
+      timestamp: "Just now",
+      severity: "success",
+    };
+
+    const updated = {
+      ...store,
+      members: store.members.map((m) => ({ ...m, mfaEnabled: true })),
+      activities: [activity, ...store.activities],
+    };
+    saveStore(updated);
+    return nonMfaMembers.length;
+  };
+
+  const revokeExpiredJitGrants = () => {
+    const now = Date.now();
+    const toRevoke = store.jitGrants.filter(
+      (g) => g.status === "active" && new Date(g.expiresAt).getTime() <= now
+    );
+    if (toRevoke.length === 0) return 0;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "compliance_remediation",
+      actor: "Automated Governance Worker",
+      actorEmail: "governance@airlock.internal",
+      target: `${toRevoke.length} Expired Grants`,
+      description: `Automated cleanup: Marked ${toRevoke.length} expired JIT session(s) as revoked per Principle of Least Privilege.`,
+      timestamp: "Just now",
+      severity: "info",
+    };
+
+    const updated = {
+      ...store,
+      jitGrants: store.jitGrants.map((g) =>
+        g.status === "active" && new Date(g.expiresAt).getTime() <= now
+          ? { ...g, status: "expired" as const }
+          : g
+      ),
+      activities: [activity, ...store.activities],
+    };
+    saveStore(updated);
+    return toRevoke.length;
+  };
+
+  const certifyMemberAccess = (memberId: string) => {
+    const member = store.members.find((m) => m.id === memberId);
+    if (!member) return;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "access_certified",
+      actor: store.organization.adminName,
+      actorEmail: store.organization.adminEmail,
+      target: member.name,
+      description: `Certified quarterly user access review (UAR) for ${member.name} (${member.role}, ${member.department}). Privileges validated.`,
+      timestamp: "Just now",
+      severity: "success",
+    };
+
+    const updated = {
+      ...store,
+      activities: [activity, ...store.activities],
+    };
+    saveStore(updated);
+  };
+
   return {
     store,
     isMounted,
@@ -931,6 +1125,11 @@ export function useAirlockStore() {
     addPolicy,
     bulkImportMembers,
     simulateAccess,
+    createApiKey,
+    revokeApiKey,
+    enforceMfaAll,
+    revokeExpiredJitGrants,
+    certifyMemberAccess,
     resetToDemo: resetStoreToDemo,
     clearToClean: clearStoreToClean,
   };

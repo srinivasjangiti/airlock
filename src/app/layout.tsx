@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -36,6 +37,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider publishableKey={clerkKey}>
             {children}
+            <Toaster richColors position="bottom-right" />
           </ClerkProvider>
         </ThemeProvider>
       </body>

@@ -118,7 +118,26 @@ flowchart TB
 - Categorized severity tiers: `critical`, `warning`, `success`, and `info`.
 - **RFC-Compliant CSV Export**: Instant one-click export of the entire audit trail with timestamps, actors, targets, and originating IP addresses.
 
-### 6. 🎨 High-Aesthetic Design System
+### 6. 🛡️ Continuous SOC 2 Type II, ISO 27001, HIPAA & GDPR Auditor
+- Automated compliance readiness scoring evaluated across active identities, MFA rates, and JIT sessions.
+- Control matrix validation covering **CC6.1**, **CC6.2**, **CC6.3**, **CC6.6** (MFA), and **CC6.8** (Audit Logs).
+- **1-Click Automated Remediations**: Enforce hardware/TOTP MFA organization-wide, purge expired JIT grants, and generate auditor attestation packages in JSON format.
+
+### 7. 💻 Developer API & Webhooks Studio
+- Programmatic IAM automation with scoped API keys (`iam:read`, `iam:write`, `access:evaluate`, `jit:create`).
+- **Interactive API Sandbox**: Live endpoint testing with real simulated latency and dynamic SDK code generation for **cURL**, **TypeScript / Node.js**, **Python**, and **Go**.
+- **Event Webhook Dispatcher**: Test downstream event streaming for `member.provisioned`, `jit.granted`, and `policy.violation`.
+
+### 8. ⌨️ Global Command Palette (`⌘K` / `Ctrl+K`)
+- Lightning-fast modal navigation across pages, member records, and connected tools.
+- Instant action triggers: run policy simulations, issue break-glass passes, toggle themes, and reset demo data in seconds.
+
+### 9. 📊 Visual Access Analytics & Anomaly Detection
+- Interactive 7-day traffic chart tracking daily `ALLOW` vs `DENY` decision volume.
+- Visual privilege distribution breakdown across engineering, design, and operations teams.
+- Built-in AI anomaly monitor flagging off-hours access sessions and least-privilege violations.
+
+### 10. 🎨 High-Aesthetic Design System
 - Built with **Tailwind CSS v4** and modern **OKLCH** color tokens.
 - Native Dark / Light / System theme switching powered by `next-themes`.
 - Accessible component primitives built upon **Radix UI** with custom micro-animations.

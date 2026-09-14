@@ -7,12 +7,14 @@ import {
   GitBranch,
   Bell,
   Key,
+  ShieldAlert,
+  Terminal,
 } from "lucide-react";
 
 const features = [
   {
     icon: Users,
-    title: "Bulk Onboarding",
+    title: "Bulk Onboarding & SCIM",
     description:
       "Onboard hundreds of team members at once with CSV import or direct invite. Set roles, access levels, and integrations in one step.",
     color: "text-indigo-500",
@@ -22,55 +24,55 @@ const features = [
     icon: Zap,
     title: "Instant Access Provisioning",
     description:
-      "Grant access to GitHub, Slack, Google Workspace, and more instantly. New members are added to the right tools automatically.",
+      "Grant access to GitHub, Slack, AWS, and Google Workspace instantly. New members are mapped to the right tools automatically.",
     color: "text-amber-500",
     bg: "bg-amber-500/10",
   },
   {
     icon: Clock,
-    title: "Time-Limited Access",
+    title: "Just-In-Time (JIT) Grants",
     description:
-      "Set expiry dates on access. Perfect for contractors, temp workers, or projects. Access revokes automatically when the time is up.",
+      "Set expiry dates on privileged access sessions. Break-glass emergency permissions auto-revoke when time limits expire.",
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
   },
   {
-    icon: ShieldCheck,
-    title: "Granular Permissions",
+    icon: ShieldAlert,
+    title: "SOC 2 & ISO 27001 Auditor",
     description:
-      "Give access to specific tools, not everything. A designer needs Figma and Slack, not GitHub. Control it at the individual level.",
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
+      "Continuous compliance verification across CC6.1, CC6.6, and HIPAA safeguards with 1-click automated remediation.",
+    color: "text-rose-500",
+    bg: "bg-rose-500/10",
   },
   {
-    icon: Key,
-    title: "Instant Revocation",
+    icon: Terminal,
+    title: "Developer API & Webhooks",
     description:
-      "Remove access across all connected tools with a single click. Offboarding 100 people? Done in seconds.",
-    color: "text-red-500",
-    bg: "bg-red-500/10",
-  },
-  {
-    icon: Bell,
-    title: "Access Alerts",
-    description:
-      "Get notified when access is expiring, granted, or revoked. Stay in complete control of who has access to what.",
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-  },
-  {
-    icon: BarChart3,
-    title: "Audit Logs",
-    description:
-      "Full visibility into every access change. Know exactly who granted what access, when, and why — across your entire organization.",
+      "Programmatic IAM evaluation, CI/CD tokens, Terraform provider keys, and dynamic SDK code generation for cURL, TS, and Python.",
     color: "text-cyan-500",
     bg: "bg-cyan-500/10",
   },
   {
-    icon: GitBranch,
-    title: "Role-Based Access",
+    icon: ShieldCheck,
+    title: "Policy Simulator Engine",
     description:
-      "Define roles that map to access policies. Engineers get dev tools. Ops get infrastructure. Marketing gets analytics. Consistent, every time.",
+      "Real-time ALLOW/DENY decision simulator testing user roles, MFA enrollment, and IP whitelisting before production deployment.",
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+  },
+  {
+    icon: BarChart3,
+    title: "Immutable Forensic Logs",
+    description:
+      "Full visibility into every access change. Tamper-evident forensic audit logs exportable directly to SIEM or CSV format.",
+    color: "text-purple-500",
+    bg: "bg-purple-500/10",
+  },
+  {
+    icon: GitBranch,
+    title: "Fine-Grained RBAC & ABAC",
+    description:
+      "Define granular role policies that map to SaaS integrations. Engineers get dev tools; SecOps gets audit monitors.",
     color: "text-orange-500",
     bg: "bg-orange-500/10",
   },
