@@ -150,12 +150,38 @@ flowchart TB
 | :--- | :--- |
 | **Framework** | [Next.js 16 (App Router)](https://nextjs.org/) & [React 19](https://react.dev/) |
 | **Language** | [TypeScript 5](https://www.typescriptlang.org/) |
+| **Database & ORM** | [Prisma ORM](https://www.prisma.io/) with SQLite (local) / PostgreSQL (production) |
+| **Cryptography** | Node.js `crypto` (SHA-256 API key hashing, HMAC-SHA256 signed JIT tokens, Merkle audit chaining) |
+| **Enterprise SSO & SCIM** | SCIM 2.0 (RFC 7643 & RFC 7644) for Okta, Microsoft Entra ID (Azure AD), and PingIdentity |
+| **Cloud & SaaS SDKs** | AWS SDK v3 STS (`@aws-sdk/client-sts`), GitHub Octokit REST, Slack Web API |
+| **Testing** | [Vitest](https://vitest.dev/) automated unit & integration test runner |
 | **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) with OKLCH Color Model & CSS Variables |
 | **Components** | [Radix UI](https://www.radix-ui.com/) primitives (`@radix-ui/react-*`) |
-| **Icons** | [Lucide React](https://lucide.dev/) |
 | **Auth** | [Clerk Authentication](https://clerk.com/) with Zero-Dependency Sandbox Fallback |
-| **Theming** | [next-themes](https://github.com/pacocoursey/next-themes) |
-| **Build Tooling** | Turbopack & React Compiler (`babel-plugin-react-compiler`) |
+
+---
+
+## 🌐 Enterprise SCIM 2.0 & REST API
+
+AirLock provides a production-grade API surface for automation and identity federation:
+
+### SCIM 2.0 Protocol (RFC 7643 & RFC 7644)
+- `GET /api/scim/v2/ServiceProviderConfig`: RFC 7643 discovery endpoint.
+- `GET /api/scim/v2/Schemas`: RFC 7643 schema definitions for Users and Groups.
+- `GET /api/scim/v2/Users`: Query and filter users (`filter=userName eq "..."`).
+- `POST /api/scim/v2/Users`: Provision new employee or service account.
+- `GET /api/scim/v2/Users/:id`: Inspect individual SCIM user profile.
+- `PATCH /api/scim/v2/Users/:id`: Update user attributes or deprovision (`active: false`).
+- `DELETE /api/scim/v2/Users/:id`: Remove identity from enterprise directory.
+
+### Core IAM REST API
+- `POST /api/v1/access/evaluate`: Deterministic zero-trust ABAC/RBAC authorization engine with MFA validation.
+- `POST /api/v1/jit/grant`: Issue cryptographically signed HMAC-SHA256 ephemeral access tokens.
+- `POST /api/v1/jit/verify`: Cryptographically verify signatures, claims, and active database status.
+- `GET /api/v1/members` & `POST /api/v1/members`: Programmatic directory management with database persistence.
+- `GET /api/v1/audit/logs`: Stream tamper-evident audit ledger entries.
+- `GET /api/v1/audit/verify`: Mathematical proof and attestation of unbroken SHA-256 audit chain.
+- `POST /api/cron/jit-revoke`: Automated worker endpoint to revoke expired JIT passes and update audit trails.
 
 ---
 
@@ -178,36 +204,36 @@ flowchart TB
    npm install
    ```
 
-3. **Configure environment variables (Optional):**
-   AirLock works straight out of the box in full **Sandbox Demo Mode** without any keys. If you wish to enable Clerk for multi-tenant production authentication:
+3. **Initialize the database:**
    ```bash
-   cp .env.example .env.local
-   ```
-   Populate your Clerk API keys in `.env.local`:
-   ```env
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-   CLERK_SECRET_KEY=sk_test_...
+   npx prisma db push
    ```
 
-4. **Run the local development server:**
+4. **Run the automated test suite:**
+   ```bash
+   npm test
+   ```
+
+5. **Start the local development server:**
    ```bash
    npm run dev
    ```
 
-5. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000) to view the landing page, or [http://localhost:3000/dashboard](http://localhost:3000/dashboard) to jump directly into the interactive governance sandbox!
+6. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000) or [http://localhost:3000/dashboard](http://localhost:3000/dashboard) to explore the platform.
 
 ---
 
-## 🧪 Verification & Build
+## 🧪 Automated Testing & Verification
 
-To check types and compile for production:
+AirLock includes an automated test suite verifying security invariants, cryptographic primitives, and protocol compliance:
+
 ```bash
-# Type check and build Next.js production bundle
-npm run build
+# Run Vitest test suites
+npm test
 
-# Start production server
-npm run start
+# Run Next.js production build
+npm run build
 ```
 
 ---

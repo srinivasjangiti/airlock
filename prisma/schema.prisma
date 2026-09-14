@@ -1,0 +1,146 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String   @unique
+  plan      String   @default("Enterprise")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  integrations Integration[]
+  policies     AccessPolicy[]
+  jitGrants    JitGrant[]
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  orgId        String
+  email        String    @unique
+  name         String
+  role         String    @default("Developer") // Admin, DevOps, SecOps, Developer, etc.
+  department   String    @default("Engineering")
+  status       String    @default("active")    // active, invited, suspended
+  mfaEnabled   Boolean   @default(false)
+  lastActiveAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  jitGrants    JitGrant[]
+
+  @@index([orgId])
+  @@index([role])
+}
+
+model Integration {
+  id          String    @id @default(cuid())
+  orgId       String
+  provider    String    // github, slack, aws, datadog, google_workspace, jira
+  name        String
+  category    String    // Development, Collaboration, Cloud & Infrastructure, Security & Monitoring
+  status      String    @default("disconnected") // connected, disconnected, syncing, error
+  credentials String?   // Encrypted JSON or raw credentials
+  config      String?   // JSON configuration
+  lastSyncAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, provider])
+  @@index([orgId])
+}
+
+model AccessPolicy {
+  id             String   @id @default(cuid())
+  orgId          String
+  name           String
+  description    String?
+  role           String   // Role this policy governs
+  resource       String   // Integration / service name or wildcard "*"
+  allowedActions String   // JSON array of actions: ["read", "write", "admin"] or ["*"]
+  conditions     String?  // JSON encoded ABAC conditions (IP CIDR, time window, etc.)
+  isDefault      Boolean  @default(false)
+  mfaRequired    Boolean  @default(false)
+  ipRestriction  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([role])
+}
+
+model JitGrant {
+  id            String    @id @default(cuid())
+  orgId         String
+  userId        String
+  userName      String
+  userEmail     String
+  integration   String
+  scope         String
+  reason        String
+  durationHours Int       @default(4)
+  status        String    @default("ACTIVE") // REQUESTED, APPROVED, ACTIVE, EXPIRED, REVOKED
+  grantedAt     DateTime  @default(now())
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  signedToken   String?   // Cryptographically signed HMAC-SHA256 JWT
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([status, expiresAt])
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  orgId      String
+  name       String
+  keyHash    String    @unique // SHA-256 hash of the raw token
+  prefix     String    // First 12 chars e.g. "ak_live_7x8f" for identification
+  scopes     String    @default("read,write") // Comma separated or JSON array
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  orgId        String
+  sequence     Int      // Monotonically increasing sequence number
+  previousHash String   // Cryptographic SHA-256 hash of block N-1
+  currentHash  String   // SHA-256(previousHash + timestamp + actor + action + resource + metadata)
+  actor        String
+  action       String   // jit.grant, access.evaluate, member.provision, policy.update, etc.
+  resource     String   // e.g. "aws:prod-database", "github:repo-access"
+  severity     String   @default("info") // info, warning, critical, success
+  metadata     String?  // JSON encoded context
+  timestamp    DateTime @default(now())
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, sequence])
+  @@index([orgId])
+  @@index([timestamp])
+}

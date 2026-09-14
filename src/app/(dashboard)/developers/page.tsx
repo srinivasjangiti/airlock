@@ -122,7 +122,7 @@ export default function DevelopersPage() {
     setResponseLatency(null);
 
     const startTime = performance.now();
-    const activeKey = (store.apiKeys || []).find((k) => k.status === "active")?.maskedKey || "airlock_live_tf_9f83a8...b741";
+    const activeKey = "ak_live_airlock_master_admin_key_2026";
 
     try {
       let endpoint = "/api/v1/access/evaluate";
@@ -202,7 +202,7 @@ export default function DevelopersPage() {
     if (codeLang === "curl") {
       if (activeEndpoint === "evaluate") {
         return `curl -X POST https://api.airlock.io/v1/access/evaluate \\
-  -H "Authorization: Bearer airlock_live_tf_9f83a8...b741" \\
+  -H "Authorization: Bearer ak_live_airlock_master_admin_key_2026" \\
   -H "Content-Type: application/json" \\
   -d '{
     "memberId": "${sandboxMemberId}",
@@ -211,7 +211,7 @@ export default function DevelopersPage() {
   }'`;
       } else if (activeEndpoint === "jit") {
         return `curl -X POST https://api.airlock.io/v1/jit/grant \\
-  -H "Authorization: Bearer airlock_live_tf_9f83a8...b741" \\
+  -H "Authorization: Bearer ak_live_airlock_master_admin_key_2026" \\
   -H "Content-Type: application/json" \\
   -d '{
     "memberId": "${sandboxMemberId}",
@@ -221,10 +221,10 @@ export default function DevelopersPage() {
   }'`;
       } else if (activeEndpoint === "members") {
         return `curl -X GET https://api.airlock.io/v1/members \\
-  -H "Authorization: Bearer airlock_live_tf_9f83a8...b741"`;
+  -H "Authorization: Bearer ak_live_airlock_master_admin_key_2026"`;
       } else {
         return `curl -X GET https://api.airlock.io/v1/audit/logs?limit=100 \\
-  -H "Authorization: Bearer airlock_live_siem_41c0ea...99e2"`;
+  -H "Authorization: Bearer ak_live_airlock_master_admin_key_2026"`;
       }
     }
 
