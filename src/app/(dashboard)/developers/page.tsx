@@ -115,95 +115,76 @@ export default function DevelopersPage() {
     toast.error(`Revoked API Key: ${name}`);
   };
 
-  const handleRunRequest = () => {
+  const handleRunRequest = async () => {
     setLoadingReq(true);
     setSimulatedResponse(null);
     setResponseStatus(null);
     setResponseLatency(null);
 
-    setTimeout(() => {
-      const latency = Math.floor(Math.random() * 25) + 22; // 22-47ms
-      setResponseLatency(latency);
-      setResponseStatus(200);
+    const startTime = performance.now();
+    const activeKey = (store.apiKeys || []).find((k) => k.status === "active")?.maskedKey || "airlock_live_tf_9f83a8...b741";
+
+    try {
+      let endpoint = "/api/v1/access/evaluate";
+      let method = "POST";
+      let payload: any = null;
 
       if (activeEndpoint === "evaluate") {
-        const result = simulateAccess(sandboxMemberId, sandboxIntegration, sandboxAction);
-        setSimulatedResponse(
-          JSON.stringify(
-            {
-              status: "success",
-              code: 200,
-              data: {
-                decision: result.allowed ? "ALLOW" : "DENY",
-                reason: result.reason,
-                memberId: sandboxMemberId,
-                integration: sandboxIntegration,
-                action: sandboxAction,
-                evaluationSteps: result.steps,
-                evaluatedAt: new Date().toISOString(),
-              },
-            },
-            null,
-            2
-          )
-        );
+        endpoint = "/api/v1/access/evaluate";
+        method = "POST";
+        const targetMember = store.members.find((m) => m.id === sandboxMemberId);
+        payload = {
+          memberId: sandboxMemberId,
+          memberRole: targetMember?.role || "Developer",
+          integration: sandboxIntegration,
+          action: sandboxAction,
+          mfaEnrolled: targetMember?.mfaEnabled ?? true,
+        };
       } else if (activeEndpoint === "jit") {
-        setSimulatedResponse(
-          JSON.stringify(
-            {
-              status: "success",
-              code: 200,
-              data: {
-                grantId: `jit-api-${Date.now()}`,
-                target: sandboxIntegration,
-                scope: "Temporary Break-Glass S3 Read Access",
-                issuedAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-                token: "airlock_token_e93a74b12c98...jwt",
-                status: "active",
-              },
-            },
-            null,
-            2
-          )
-        );
+        endpoint = "/api/v1/jit/grant";
+        method = "POST";
+        payload = {
+          memberId: sandboxMemberId,
+          integration: sandboxIntegration,
+          scope: "Temporary Break-Glass Production Access",
+          durationHours: 4,
+          reason: "Emergency hotfix investigation",
+        };
       } else if (activeEndpoint === "members") {
-        setSimulatedResponse(
-          JSON.stringify(
-            {
-              status: "success",
-              code: 200,
-              total: store.members.length,
-              members: store.members.slice(0, 3).map((m) => ({
-                id: m.id,
-                name: m.name,
-                email: m.email,
-                role: m.role,
-                status: m.status,
-                mfaEnabled: m.mfaEnabled,
-              })),
-            },
-            null,
-            2
-          )
-        );
+        endpoint = "/api/v1/members";
+        method = "GET";
       } else {
-        setSimulatedResponse(
-          JSON.stringify(
-            {
-              status: "success",
-              code: 200,
-              totalRecords: store.activities.length,
-              auditLogs: store.activities.slice(0, 2),
-            },
-            null,
-            2
-          )
-        );
+        endpoint = "/api/v1/audit/logs";
+        method = "GET";
       }
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: {
+          Authorization: `Bearer ${activeKey}`,
+          "Content-Type": "application/json",
+        },
+        body: payload ? JSON.stringify(payload) : undefined,
+      });
+
+      const latency = Math.round(performance.now() - startTime);
+      setResponseLatency(latency);
+      setResponseStatus(res.status);
+
+      const json = await res.json();
+      setSimulatedResponse(JSON.stringify(json, null, 2));
+
+      if (res.ok) {
+        toast.success(`Server returned HTTP ${res.status} OK in ${latency}ms!`);
+      } else {
+        toast.error(`HTTP ${res.status}: ${json.message || "Request failed"}`);
+      }
+    } catch (err: any) {
+      setSimulatedResponse(JSON.stringify({ error: err.message }, null, 2));
+      toast.error(`Fetch error: ${err.message}`);
+    } finally {
       setLoadingReq(false);
-      toast.success("Simulated API request completed 200 OK");
-    }, 450);
+    }
   };
 
   const handleDispatchWebhook = () => {

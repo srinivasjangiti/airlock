@@ -69,6 +69,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAirlockStore, Member, MemberRole, MemberStatus } from "@/lib/airlock-store";
+import { toast } from "sonner";
 
 const ALL_ROLES: MemberRole[] = [
   "Admin",
@@ -145,6 +146,34 @@ export default function MembersPage() {
       integrations: newIntegrations,
       mfaEnabled: newMfa,
     });
+
+    // Check if any of the member's tools are connected in Live Mode
+    const liveTools = store.integrations.filter(
+      (i) => i.status === "connected" && newIntegrations.includes(i.name)
+    );
+
+    liveTools.forEach(async (tool) => {
+      try {
+        const res = await fetch("/api/integrations/provision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: tool.id,
+            action: "invite",
+            member: { name, email: newEmail.trim(), role: newRole },
+            credentials: tool.credentials,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && tool.connectionType === "live") {
+          toast.success(`Dispatched live invitation to ${tool.name} for ${name}`);
+        }
+      } catch (err) {
+        console.error("Provisioning error:", err);
+      }
+    });
+
+    toast.success(`Provisioned ${name} (${newRole}) with ${newIntegrations.length} tool(s).`);
 
     setInviteOpen(false);
     setNewName("");
