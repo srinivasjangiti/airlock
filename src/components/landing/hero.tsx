@@ -139,10 +139,10 @@ function DashboardPreview() {
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { label: "Total Members", value: "247", change: "+12 this week" },
-            { label: "Active Integrations", value: "8", change: "All synchronized" },
-            { label: "JIT Active Grants", value: "3", change: "Auto-expiring" },
-            { label: "Security Events", value: "1,429", change: "Zero breaches" },
+            { label: "Enforcement Kernel", value: "Active", change: "RBAC & ABAC Real-Time" },
+            { label: "Identity Sync", value: "SCIM 2.0", change: "RFC 7644 Compliant" },
+            { label: "Access Model", value: "Zero-Trust", change: "Ephemeral Just-In-Time" },
+            { label: "Audit Ledger", value: "Tamper-Proof", change: "SHA-256 Chained Blocks" },
           ].map((stat) => (
             <div key={stat.label} className="rounded-lg border border-border bg-card p-3">
               <div className="text-[10px] text-muted-foreground mb-1">{stat.label}</div>
@@ -155,20 +155,20 @@ function DashboardPreview() {
         {/* Table Preview */}
         <div className="rounded-lg border border-border overflow-hidden">
           <div className="bg-muted/30 px-3 py-2 text-[10px] font-medium text-muted-foreground flex gap-6">
-            <span className="w-32">MEMBER</span>
-            <span className="w-32">ROLE</span>
+            <span className="w-36">SYSTEM PRINCIPAL</span>
+            <span className="w-28">AUTHORITY</span>
             <span className="w-24">STATUS</span>
-            <span>PROVISIONED TOOLS</span>
+            <span>ENFORCED PROTOCOLS</span>
           </div>
           {[
-            { name: "Srinivas Jangiti", role: "Admin", status: "active", tools: "GitHub • AWS • Slack • Google" },
-            { name: "Aarav Mehta", role: "DevOps", status: "active", tools: "GitHub • AWS • Datadog" },
-            { name: "Elena Rostova", role: "SecOps", status: "active", tools: "AWS • Datadog • Slack" },
-            { name: "Marcus Brody", role: "Developer", status: "active (JIT)", tools: "GitHub • Slack • AWS [JIT]" },
+            { name: "Srinivas Jangiti", role: "Primary Admin", status: "verified", tools: "GitHub • AWS • Slack • Google Workspace" },
+            { name: "SCIM Sync Daemon", role: "Directory Broker", status: "active", tools: "RFC 7643/7644 Sync • Automated Lifecycle" },
+            { name: "JIT Ephemeral Enforcer", role: "Access Broker", status: "active", tools: "Time-Bound Revocation • Least-Privilege" },
+            { name: "Audit Integrity Engine", role: "Cryptographic Node", status: "verified", tools: "SHA-256 Merkle Chain • Tamper-Evident Ledger" },
           ].map((row) => (
             <div key={row.name} className="flex gap-6 items-center px-3 py-2.5 border-t border-border hover:bg-muted/20 text-[11px]">
-              <span className="w-32 font-medium truncate">{row.name}</span>
-              <span className="w-32 text-muted-foreground">{row.role}</span>
+              <span className="w-36 font-medium truncate">{row.name}</span>
+              <span className="w-28 text-muted-foreground">{row.role}</span>
               <span className="w-24">
                 <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded px-1.5 py-0.5 text-[10px] font-medium">
                   {row.status}

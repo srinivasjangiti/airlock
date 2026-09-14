@@ -2,23 +2,21 @@ import { db } from "./db";
 import { GENESIS_HASH, computeAuditHash, hashApiKey } from "./crypto";
 
 export async function ensureDatabaseSeeded() {
-  // 1. Ensure Organization
-  let org = await db.organization.findFirst();
-  if (!org) {
-    org = await db.organization.create({
-      data: {
-        name: "Acme Innovations Ltd.",
-        domain: "acme.io",
-        plan: "Enterprise Plus",
-      },
-    });
-  }
+  // 1. Ensure Organization (Atomic upsert by unique domain)
+  const org = await db.organization.upsert({
+    where: { domain: "airlock.io" },
+    update: {},
+    create: {
+      name: "AirLock Technologies",
+      domain: "airlock.io",
+      plan: "Enterprise",
+    },
+  });
 
-  // 2. Ensure Members
-  const userCount = await db.user.count({ where: { orgId: org.id } });
+  // 2. Ensure Primary Organization Administrator (Zero Mock Users)
   let adminUser = await db.user.findFirst({ where: { orgId: org.id, role: "Admin" } });
 
-  if (userCount === 0 || !adminUser) {
+  if (!adminUser) {
     adminUser = await db.user.upsert({
       where: { email: "srinivasajan.work@gmail.com" },
       update: { orgId: org.id, role: "Admin", mfaEnabled: true },
@@ -33,54 +31,9 @@ export async function ensureDatabaseSeeded() {
         lastActiveAt: new Date(),
       },
     });
-
-    await db.user.upsert({
-      where: { email: "aarav.mehta@acme.io" },
-      update: { orgId: org.id },
-      create: {
-        orgId: org.id,
-        name: "Aarav Mehta",
-        email: "aarav.mehta@acme.io",
-        role: "DevOps",
-        department: "Platform Engineering",
-        status: "active",
-        mfaEnabled: true,
-        lastActiveAt: new Date(Date.now() - 3600000),
-      },
-    });
-
-    await db.user.upsert({
-      where: { email: "elena.r@acme.io" },
-      update: { orgId: org.id },
-      create: {
-        orgId: org.id,
-        name: "Elena Rostova",
-        email: "elena.r@acme.io",
-        role: "SecOps",
-        department: "Information Security",
-        status: "active",
-        mfaEnabled: true,
-        lastActiveAt: new Date(Date.now() - 7200000),
-      },
-    });
-
-    await db.user.upsert({
-      where: { email: "m.brody@acme.io" },
-      update: { orgId: org.id },
-      create: {
-        orgId: org.id,
-        name: "Marcus Brody",
-        email: "m.brody@acme.io",
-        role: "Developer",
-        department: "Backend Engineering",
-        status: "active",
-        mfaEnabled: true,
-        lastActiveAt: new Date(Date.now() - 86400000),
-      },
-    });
   }
 
-  // 3. Ensure Access Policies
+  // 3. Ensure Standard Access Policies
   const policyCount = await db.accessPolicy.count({ where: { orgId: org.id } });
   if (policyCount === 0) {
     await db.accessPolicy.createMany({
@@ -133,7 +86,7 @@ export async function ensureDatabaseSeeded() {
     });
   }
 
-  // 4. Ensure API Key
+  // 4. Ensure Master API Key (Raw key: "ak_live_airlock_master_admin_key_2026")
   const rawKey = "ak_live_airlock_master_admin_key_2026";
   const keyHash = hashApiKey(rawKey);
   const existingKey = await db.apiKey.findUnique({ where: { keyHash } });

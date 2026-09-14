@@ -90,17 +90,17 @@ export default function DashboardPage() {
     },
   ];
 
-  // 7-day access requests chart data
-  const ACCESS_TREND = [
-    { day: "Mon", allowed: 142, blocked: 8 },
-    { day: "Tue", allowed: 168, blocked: 12 },
-    { day: "Wed", allowed: 195, blocked: 5 },
-    { day: "Thu", allowed: 210, blocked: 14 },
-    { day: "Fri", allowed: 184, blocked: 9 },
-    { day: "Sat", allowed: 45, blocked: 3 },
-    { day: "Sun", allowed: 62, blocked: 2 },
-  ];
-  const maxReq = Math.max(...ACCESS_TREND.map((d) => d.allowed + d.blocked));
+  // Dynamic evaluation stats
+  const evaluationActivities = store.activities.filter(
+    (a) => a.type === "policy_evaluated" || a.type === "access_denied"
+  );
+  const totalEvaluations = evaluationActivities.length;
+  const allowedEvaluations = evaluationActivities.filter((a) => a.type === "policy_evaluated").length;
+  const blockedEvaluations = evaluationActivities.filter((a) => a.type === "access_denied").length;
+
+  const flaggedActivity = store.activities.find(
+    (a) => a.severity === "warning" || a.severity === "critical" || a.type === "access_denied"
+  );
 
   return (
     <>
@@ -126,48 +126,90 @@ export default function DashboardPage() {
       />
 
       <div className="flex-1 p-6 space-y-6">
-        {/* Live Threat Detection & Anomaly Banner */}
+        {/* Threat Detection & Zero-Trust Posture Banner */}
         {!alertDismissed && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all">
-            <div className="flex items-start gap-3">
-              <div className="h-8 w-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 font-semibold text-foreground">
-                  <span>Security Anomaly Flagged by AI Monitor</span>
-                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400 py-0">
-                    Low Severity
-                  </Badge>
+          flaggedActivity ? (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-4 w-4" />
                 </div>
-                <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                  Off-hours ephemeral access session initiated for <strong>Marcus Brody</strong> on AWS IAM Identity Center. Zero policy violations detected.
-                </p>
+                <div>
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <span>Security Incident Flagged by Policy Engine</span>
+                    <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400 py-0 uppercase">
+                      {flaggedActivity.severity || "Warning"}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                    {flaggedActivity.description}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs border-amber-500/30 hover:bg-amber-500/20"
+                  asChild
+                >
+                  <Link href="/activity">Inspect Audit Trail</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setAlertDismissed(true);
+                    toast.info("Security alert acknowledged.");
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
+          ) : (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs transition-all">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <span>Zero-Trust Perimeter Active & Cryptographically Enforced</span>
+                    <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 py-0">
+                      All Systems Nominal
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                    Least-privilege RBAC/ABAC enforcement is operational across <strong>{store.organization.name}</strong>. Zero anomalous access attempts detected.
+                  </p>
+                </div>
+              </div>
 
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs border-amber-500/30 hover:bg-amber-500/20"
-                asChild
-              >
-                <Link href="/activity">Inspect Audit Trail</Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  setAlertDismissed(true);
-                  toast.info("Security alert acknowledged.");
-                }}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs border-emerald-500/30 hover:bg-emerald-500/10 text-foreground"
+                  asChild
+                >
+                  <Link href="/activity">Inspect Audit Ledger</Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setAlertDismissed(true);
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-          </div>
+          )
         )}
 
         {/* Metric Cards */}
@@ -194,58 +236,80 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* Analytics Grid: 7-Day Access Requests Trend & Role Breakdown */}
+        {/* Analytics Grid: Real-Time Access Telemetry & Role Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 7-Day Access Requests Chart */}
+          {/* Access Requests & Telemetry Card */}
           <Card className="lg:col-span-8 border-border shadow-xs">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" />
-                    7-Day Access Evaluations & Traffic
+                    Real-Time Access Telemetry & Evaluations
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Automated RBAC/ABAC policy decisions across SaaS applications
+                    Live RBAC/ABAC policy decisions across SaaS applications
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <span className="h-2 w-2 rounded-full bg-primary" /> Allowed
+                    <span className="h-2 w-2 rounded-full bg-primary" /> {allowedEvaluations} Allowed
                   </span>
                   <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <span className="h-2 w-2 rounded-full bg-destructive" /> Blocked
+                    <span className="h-2 w-2 rounded-full bg-destructive" /> {blockedEvaluations} Blocked
                   </span>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-4">
-              <div className="h-44 w-full flex items-end justify-between gap-3 pt-4 px-2">
-                {ACCESS_TREND.map((item, idx) => {
-                  const allowedHeight = Math.round((item.allowed / maxReq) * 120);
-                  const blockedHeight = Math.max(Math.round((item.blocked / maxReq) * 120), 4);
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                      <div className="text-[10px] font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                        {item.allowed + item.blocked}
-                      </div>
-                      <div className="w-full max-w-[32px] flex flex-col gap-1 items-center justify-end h-32">
-                        <div
-                          style={{ height: `${blockedHeight}px` }}
-                          className="w-full rounded-xs bg-destructive/70 group-hover:bg-destructive transition-colors"
-                          title={`${item.blocked} Blocked`}
-                        />
-                        <div
-                          style={{ height: `${allowedHeight}px` }}
-                          className="w-full rounded-t-xs bg-primary/80 group-hover:bg-primary transition-colors"
-                          title={`${item.allowed} Allowed`}
-                        />
-                      </div>
-                      <span className="text-[11px] font-medium text-muted-foreground">{item.day}</span>
+              {totalEvaluations === 0 ? (
+                <div className="h-44 w-full flex flex-col items-center justify-center text-center p-6 border border-dashed border-border rounded-lg bg-muted/5">
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center mb-2.5">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <h4 className="text-xs font-semibold text-foreground">No Access Telemetry Recorded Yet</h4>
+                  <p className="text-[11px] text-muted-foreground max-w-sm mt-0.5 mb-3">
+                    Zero-trust access evaluations, policy approvals, and denials will be graphed here dynamically as users or API tokens evaluate access permissions.
+                  </p>
+                  <Button size="sm" variant="outline" asChild className="h-7 text-xs gap-1.5 border-primary/30 hover:bg-primary/10">
+                    <Link href="/access">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      Launch Policy Simulator
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3 mb-2">
+                    <div className="rounded-lg border border-border p-3 bg-muted/10">
+                      <div className="text-[10px] text-muted-foreground">Total Evaluations</div>
+                      <div className="text-lg font-bold">{totalEvaluations}</div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="rounded-lg border border-primary/20 p-3 bg-primary/5">
+                      <div className="text-[10px] text-primary">Granted Access</div>
+                      <div className="text-lg font-bold text-primary">{allowedEvaluations}</div>
+                    </div>
+                    <div className="rounded-lg border border-destructive/20 p-3 bg-destructive/5">
+                      <div className="text-[10px] text-destructive">Blocked Denials</div>
+                      <div className="text-lg font-bold text-destructive">{blockedEvaluations}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                    {evaluationActivities.slice(0, 4).map((evalAct) => (
+                      <div key={evalAct.id} className="flex items-center justify-between text-xs p-2 rounded border border-border bg-muted/20">
+                        <div className="flex items-center gap-2 truncate">
+                          <Badge variant={evalAct.type === "policy_evaluated" ? "default" : "destructive"} className="text-[10px] py-0">
+                            {evalAct.type === "policy_evaluated" ? "ALLOWED" : "BLOCKED"}
+                          </Badge>
+                          <span className="font-medium truncate">{evalAct.target}</span>
+                          <span className="text-muted-foreground text-[11px] truncate">({evalAct.actor})</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{evalAct.timestamp}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -353,8 +417,20 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {store.jitGrants.length === 0 ? (
-                <div className="py-8 text-center text-xs text-muted-foreground">
-                  No active JIT grants. Use the Access page to issue temporary grants.
+                <div className="py-7 text-center flex flex-col items-center justify-center border border-dashed border-border rounded-lg bg-muted/5 p-5">
+                  <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
+                    <Clock className="h-4 w-4 text-amber-500" />
+                  </div>
+                  <div className="text-xs font-semibold text-foreground">No Active JIT Grants</div>
+                  <p className="text-[11px] text-muted-foreground max-w-xs mt-0.5 mb-3">
+                    Zero standing privileges currently elevated. All access strictly adheres to baseline least privilege.
+                  </p>
+                  <Button size="sm" variant="outline" asChild className="h-7 text-xs gap-1.5 border-amber-500/30 hover:bg-amber-500/10 text-foreground">
+                    <Link href="/access">
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      Issue Ephemeral Grant
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">

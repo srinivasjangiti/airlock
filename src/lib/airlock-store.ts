@@ -97,13 +97,17 @@ export type ActivityType =
   | "policy_created"
   | "policy_updated"
   | "policy_simulation"
+  | "policy_evaluated"
+  | "access_denied"
   | "security_alert"
   | "bulk_import"
   | "audit_export"
   | "api_key_created"
   | "api_key_revoked"
   | "compliance_remediation"
-  | "access_certified";
+  | "access_certified"
+  | "ledger_genesis"
+  | "genesis";
 
 export type Activity = {
   id: string;
@@ -149,112 +153,16 @@ export type AirlockStoreData = {
 
 const INITIAL_MEMBERS: Member[] = [
   {
-    id: "mem-1",
+    id: "mem-admin",
     name: "Srinivas Jangiti",
     email: "srinivasajan.work@gmail.com",
     role: "Admin",
     status: "active",
     department: "Executive & Core Arch",
-    integrations: ["GitHub", "Slack", "AWS", "Google Workspace", "Datadog", "Jira"],
+    integrations: [],
     mfaEnabled: true,
-    lastActive: "Just now",
-    joinedAt: "2026-01-10",
-  },
-  {
-    id: "mem-2",
-    name: "Aarav Mehta",
-    email: "aarav.mehta@acmecorp.internal",
-    role: "DevOps",
-    status: "active",
-    department: "Platform Engineering",
-    integrations: ["GitHub", "AWS", "Slack", "Datadog"],
-    mfaEnabled: true,
-    lastActive: "12m ago",
-    joinedAt: "2026-01-15",
-  },
-  {
-    id: "mem-3",
-    name: "Elena Rostova",
-    email: "elena.r@acmecorp.internal",
-    role: "SecOps",
-    status: "active",
-    department: "Information Security",
-    integrations: ["GitHub", "AWS", "Slack", "Google Workspace", "Datadog"],
-    mfaEnabled: true,
-    lastActive: "25m ago",
-    joinedAt: "2026-01-18",
-  },
-  {
-    id: "mem-4",
-    name: "Marcus Brody",
-    email: "m.brody@acmecorp.internal",
-    role: "Developer",
-    status: "active",
-    department: "Backend Engineering",
-    integrations: ["GitHub", "Slack", "Jira"],
-    mfaEnabled: true,
-    lastActive: "1h ago",
-    joinedAt: "2026-01-20",
-  },
-  {
-    id: "mem-5",
-    name: "Sofia Chen",
-    email: "sofia.chen@acmecorp.internal",
-    role: "Designer",
-    status: "active",
-    department: "Product Design",
-    integrations: ["Figma", "Slack", "Notion"],
-    mfaEnabled: false,
-    lastActive: "3h ago",
-    joinedAt: "2026-02-01",
-  },
-  {
-    id: "mem-6",
-    name: "Kavita Rao",
-    email: "kavita.rao@acmecorp.internal",
-    role: "Product",
-    status: "active",
-    department: "Product Management",
-    integrations: ["Jira", "Slack", "Notion", "Google Workspace"],
-    mfaEnabled: true,
-    lastActive: "5h ago",
-    joinedAt: "2026-02-05",
-  },
-  {
-    id: "mem-7",
-    name: "Liam O'Connor",
-    email: "liam.oc@acmecorp.internal",
-    role: "Developer",
-    status: "invited",
-    department: "Frontend Engineering",
-    integrations: ["GitHub", "Slack"],
-    mfaEnabled: false,
-    lastActive: "Pending Invite",
-    joinedAt: "2026-03-01",
-  },
-  {
-    id: "mem-8",
-    name: "Chloe Dupont",
-    email: "chloe.d@acmecorp.internal",
-    role: "Finance",
-    status: "active",
-    department: "Financial Operations",
-    integrations: ["Google Workspace", "Slack"],
-    mfaEnabled: true,
-    lastActive: "Yesterday",
-    joinedAt: "2026-02-14",
-  },
-  {
-    id: "mem-9",
-    name: "Devon Vance",
-    email: "devon.v@contractors.internal",
-    role: "Developer",
-    status: "suspended",
-    department: "Contract Engineering",
-    integrations: ["GitHub"],
-    mfaEnabled: false,
-    lastActive: "3d ago",
-    joinedAt: "2026-01-25",
+    lastActive: "Active Now",
+    joinedAt: "2026-01-01",
   },
 ];
 
@@ -265,11 +173,10 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Manage organization teams, repository access, write permissions, and automated offboarding.",
     icon: "🐙",
     category: "Development",
-    status: "connected",
-    membersCount: 6,
-    lastSync: "2 mins ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Org membership", "Team management", "Repo push rules", "SSH key provisioning"],
-    config: { orgOrTeam: "acme-corp-org", syncInterval: "Every 15 mins", autoProvision: true },
   },
   {
     id: "slack",
@@ -277,11 +184,10 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Auto-provision channels, guest passes, enterprise workspaces, and group mentions.",
     icon: "💬",
     category: "Collaboration",
-    status: "connected",
-    membersCount: 8,
-    lastSync: "5 mins ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Channel auto-join", "Guest expiration", "Group assignments", "Instant de-auth"],
-    config: { orgOrTeam: "acmeworkspace.slack.com", syncInterval: "Real-time webhook", autoProvision: true },
   },
   {
     id: "aws",
@@ -289,11 +195,10 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Federated SSO, multi-account privilege provisioning, and ephemeral session policies.",
     icon: "☁️",
     category: "Cloud & Infrastructure",
-    status: "connected",
-    membersCount: 3,
-    lastSync: "10 mins ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Permission sets", "Multi-account access", "CLI token rotation", "Break-glass audit"],
-    config: { orgOrTeam: "aws-acme-global", syncInterval: "Hourly", autoProvision: false },
   },
   {
     id: "google",
@@ -301,11 +206,10 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Provision corporate email addresses, shared drive vaults, and calendar permissions.",
     icon: "🔵",
     category: "Productivity",
-    status: "connected",
-    membersCount: 5,
-    lastSync: "30 mins ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Drive permissions", "Google Groups sync", "OU placement", "MFA enforcement"],
-    config: { orgOrTeam: "acmecorp.internal", syncInterval: "Daily", autoProvision: true },
   },
   {
     id: "jira",
@@ -313,9 +217,9 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Role-based project issue tracking, board viewing, and sprint administration.",
     icon: "📋",
     category: "Productivity",
-    status: "connected",
-    membersCount: 4,
-    lastSync: "1 hour ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Project access", "Issue workflow roles", "Security schemes", "API integration"],
   },
   {
@@ -324,9 +228,9 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Monitoring dashboards, APM telemetry access, alerting triggers, and log access tiers.",
     icon: "🐶",
     category: "Security & Monitoring",
-    status: "connected",
-    membersCount: 3,
-    lastSync: "2 hours ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Dashboard viewer", "Log explorer access", "Incident commander", "Monitor creation"],
   },
   {
@@ -335,9 +239,9 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     description: "Design workspace seat management, file libraries, and client review access.",
     icon: "🎨",
     category: "Collaboration",
-    status: "connected",
-    membersCount: 2,
-    lastSync: "3 hours ago",
+    status: "disconnected",
+    membersCount: 0,
+    lastSync: "Never",
     features: ["Editor licenses", "Team libraries", "View-only seats", "Draft protection"],
   },
   {
@@ -384,7 +288,7 @@ const INITIAL_POLICIES: AccessPolicy[] = [
     allowedIntegrations: ["GitHub", "Slack", "Jira"],
     permissions: ["github:push", "github:pull", "jira:contribute", "slack:standard"],
     isDefault: true,
-    mfaRequired: true,
+    mfaRequired: false,
     ipRestriction: false,
   },
   {
@@ -398,168 +302,48 @@ const INITIAL_POLICIES: AccessPolicy[] = [
     mfaRequired: true,
     ipRestriction: true,
   },
-  {
-    id: "pol-designer",
-    name: "Product Design & Creative",
-    description: "Design file editing, prototype testing, and design-system updates.",
-    role: "Designer",
-    allowedIntegrations: ["Figma", "Slack", "Notion"],
-    permissions: ["figma:editor", "slack:standard", "notion:collaborator"],
-    isDefault: false,
-    mfaRequired: false,
-    ipRestriction: false,
-  },
 ];
 
-const INITIAL_JIT_GRANTS: TimeLimitedGrant[] = [
-  {
-    id: "jit-101",
-    memberId: "mem-4",
-    memberName: "Marcus Brody",
-    memberEmail: "m.brody@acmecorp.internal",
-    integration: "AWS",
-    scope: "Production Read-Only Cluster Logs (us-east-1)",
-    reason: "Hotfix root-cause analysis for Checkout Service latency spike (INC-4029)",
-    grantedAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    expiresAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-    status: "active",
-    approvedBy: "Srinivas Jangiti",
-  },
-  {
-    id: "jit-102",
-    memberId: "mem-2",
-    memberName: "Aarav Mehta",
-    memberEmail: "aarav.mehta@acmecorp.internal",
-    integration: "GitHub",
-    scope: "Force-Push Bypass & Branch Unprotect (core-banking-api)",
-    reason: "Disaster recovery replay script following upstream provider schema drift",
-    grantedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-    expiresAt: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
-    status: "active",
-    approvedBy: "Srinivas Jangiti",
-  },
-  {
-    id: "jit-103",
-    memberId: "mem-5",
-    memberName: "Sofia Chen",
-    memberEmail: "sofia.chen@acmecorp.internal",
-    integration: "Google Workspace",
-    scope: "Access to Q3 Brand Strategy Confidential Vault",
-    reason: "Final design asset handoff for corporate keynote presentation",
-    grantedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-    expiresAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    status: "expired",
-    approvedBy: "Srinivas Jangiti",
-  },
-];
+const INITIAL_JIT_GRANTS: TimeLimitedGrant[] = [];
 
 const INITIAL_ACTIVITIES: Activity[] = [
   {
-    id: "act-1",
-    type: "jit_grant_issued",
-    actor: "Srinivas Jangiti",
-    actorEmail: "srinivasajan.work@gmail.com",
-    target: "Marcus Brody",
-    description: "Approved JIT access grant for AWS (Production Read-Only Logs) with 4-hour expiry.",
-    timestamp: "45 mins ago",
-    integration: "AWS",
-    ipAddress: "157.34.82.11",
-    severity: "warning",
-  },
-  {
-    id: "act-2",
-    type: "integration_connected",
-    actor: "Srinivas Jangiti",
-    actorEmail: "srinivasajan.work@gmail.com",
-    target: "Datadog APM",
-    description: "Successfully configured Datadog telemetry sync and log inspector permissions.",
-    timestamp: "2 hours ago",
-    integration: "Datadog",
-    ipAddress: "157.34.82.11",
-    severity: "success",
-  },
-  {
-    id: "act-3",
-    type: "member_suspended",
-    actor: "Elena Rostova",
-    actorEmail: "elena.r@acmecorp.internal",
-    target: "Devon Vance",
-    description: "Suspended contractor account and automatically revoked all active GitHub repo seats.",
-    timestamp: "Yesterday",
-    integration: "GitHub",
-    ipAddress: "192.0.2.45",
-    severity: "critical",
-  },
-  {
-    id: "act-4",
-    type: "role_changed",
-    actor: "Srinivas Jangiti",
-    actorEmail: "srinivasajan.work@gmail.com",
-    target: "Aarav Mehta",
-    description: "Promoted Aarav Mehta to DevOps Lead policy with AWS identity center privileges.",
-    timestamp: "Yesterday",
-    integration: "AWS",
-    ipAddress: "157.34.82.11",
+    id: "act-genesis",
+    type: "ledger_genesis",
+    actor: "System",
+    actorEmail: "system@airlock.io",
+    target: "Cryptographic Merkle Ledger",
+    description: "AirLock cryptographic audit ledger initialized at Genesis block.",
+    timestamp: "Genesis",
+    integration: "AirLock",
+    ipAddress: "127.0.0.1",
     severity: "info",
-  },
-  {
-    id: "act-5",
-    type: "bulk_import",
-    actor: "Srinivas Jangiti",
-    actorEmail: "srinivasajan.work@gmail.com",
-    target: "4 Team Members",
-    description: "Imported engineering batch from CSV template with automated Slack & GitHub invites.",
-    timestamp: "3 days ago",
-    ipAddress: "157.34.82.11",
-    severity: "success",
   },
 ];
 
 const INITIAL_API_KEYS: ApiKey[] = [
   {
-    id: "key-1",
-    name: "Production Terraform IAM Provider",
-    keyPrefix: "airlock_live_tf",
-    maskedKey: "airlock_live_tf_9f83a8...b741",
-    scopes: ["iam:read", "iam:write", "access:evaluate"],
-    role: "DevOps",
-    createdAt: "2026-02-10",
-    lastUsed: "5 mins ago",
-    status: "active",
-  },
-  {
-    id: "key-2",
-    name: "SecOps SIEM Audit Log Shipper (Datadog)",
-    keyPrefix: "airlock_live_siem",
-    maskedKey: "airlock_live_siem_41c0ea...99e2",
-    scopes: ["audit:export", "logs:query"],
-    role: "SecOps",
-    createdAt: "2026-02-18",
-    lastUsed: "Just now",
-    status: "active",
-  },
-  {
-    id: "key-3",
-    name: "Slack Break-Glass Bot Dispatcher",
-    keyPrefix: "airlock_live_bot",
-    maskedKey: "airlock_live_bot_73da1f...28f0",
-    scopes: ["jit:create", "access:evaluate"],
+    id: "key-master",
+    name: "Default Enterprise Admin Key",
+    keyPrefix: "ak_live_airloc",
+    maskedKey: "ak_live_airlock_master_admin_key_2026",
+    scopes: ["iam:read", "iam:write", "access:evaluate", "jit:create", "audit:export"],
     role: "Admin",
-    createdAt: "2026-03-01",
-    lastUsed: "45 mins ago",
+    createdAt: "2026-01-01",
+    lastUsed: "Active",
     status: "active",
   },
 ];
 
-const STORAGE_KEY = "airlock_enterprise_store_v1";
+const STORAGE_KEY = "airlock_authentic_store_v2";
 
 export function getInitialStore(): AirlockStoreData {
   return {
     organization: {
-      name: "Acme Innovations Ltd.",
-      slug: "acme-innovations",
-      plan: "Enterprise Scale",
-      industry: "Cybersecurity & Cloud Infrastructure",
+      name: "AirLock Technologies",
+      slug: "airlock-technologies",
+      plan: "Enterprise",
+      industry: "Identity & Access Management Governance",
       adminName: "Srinivas Jangiti",
       adminEmail: "srinivasajan.work@gmail.com",
     },
@@ -1009,14 +793,30 @@ export function useAirlockStore() {
 
     // 4. MFA Policy Check
     if (matchedPolicy.mfaRequired && !member.mfaEnabled) {
+      const reason = "Access blocked: MFA is required by security policy but not enrolled by user.";
       steps.push({
         check: "MFA Enforcement",
         passed: false,
         note: `Policy "${matchedPolicy.name}" strictly mandates Multi-Factor Authentication (MFA), but ${member.name} has not enrolled.`,
       });
+      const activity: Activity = {
+        id: `act-${Date.now()}`,
+        type: "access_denied",
+        actor: member.name,
+        actorEmail: member.email,
+        target: integrationName,
+        description: `Access DENIED to ${integrationName} for ${member.name} (${member.role}): MFA required but not enrolled.`,
+        timestamp: "Just now",
+        integration: integrationName,
+        severity: "warning",
+      };
+      saveStore({
+        ...store,
+        activities: [activity, ...store.activities],
+      });
       return {
         allowed: false,
-        reason: "Access blocked: MFA is required by security policy but not enrolled by user.",
+        reason,
         matchedPolicy,
         steps,
       };
@@ -1027,9 +827,26 @@ export function useAirlockStore() {
       note: member.mfaEnabled ? "Hardware/TOTP MFA requirement satisfied." : "MFA optional under this policy.",
     });
 
+    const allowedReason = `Access ALLOWED under policy "${matchedPolicy.name}" for role ${member.role}.`;
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "policy_evaluated",
+      actor: member.name,
+      actorEmail: member.email,
+      target: integrationName,
+      description: `Access GRANTED to ${integrationName} for ${member.name} (${member.role}) under policy "${matchedPolicy.name}".`,
+      timestamp: "Just now",
+      integration: integrationName,
+      severity: "info",
+    };
+    saveStore({
+      ...store,
+      activities: [activity, ...store.activities],
+    });
+
     return {
       allowed: true,
-      reason: `Access ALLOWED under policy "${matchedPolicy.name}" for role ${member.role}.`,
+      reason: allowedReason,
       matchedPolicy,
       steps,
     };
@@ -1168,6 +985,16 @@ export function useAirlockStore() {
       activities: [activity, ...store.activities],
     };
     saveStore(updated);
+  };
+
+  const resetStoreToDemo = () => {
+    const initial = getInitialStore();
+    saveStore(initial);
+  };
+
+  const clearStoreToClean = () => {
+    const clean = getInitialStore();
+    saveStore(clean);
   };
 
   return {

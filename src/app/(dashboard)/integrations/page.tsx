@@ -149,7 +149,10 @@ export default function IntegrationsPage() {
               remoteOrgName:
                 verificationResult.details.organization?.name ||
                 verificationResult.details.team?.name,
-              remoteMemberCount: 12,
+              remoteMemberCount:
+                verificationResult.details.organization?.plan?.filled_seats ||
+                verificationResult.details.team?.members_count ||
+                store.members.filter((m) => m.status === "active").length,
               authenticatedUser:
                 verificationResult.details.authenticatedUser?.login ||
                 verificationResult.details.botUser?.user,
