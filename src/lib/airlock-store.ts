@@ -39,6 +39,19 @@ export type Integration = {
   membersCount: number;
   lastSync: string;
   features: string[];
+  connectionType?: "live" | "sandbox";
+  credentials?: {
+    token?: string;
+    orgOrTeam?: string;
+    webhookUrl?: string;
+    region?: string;
+    lastVerifiedAt?: string;
+  };
+  liveData?: {
+    remoteOrgName?: string;
+    remoteMemberCount?: number;
+    authenticatedUser?: string;
+  };
   config?: {
     orgOrTeam?: string;
     syncInterval?: string;
@@ -751,6 +764,50 @@ export function useAirlockStore() {
     saveStore(updated);
   };
 
+  const connectIntegrationLive = (
+    integrationId: string,
+    credentials: { token?: string; orgOrTeam?: string; webhookUrl?: string; region?: string },
+    liveData?: { remoteOrgName?: string; remoteMemberCount?: number; authenticatedUser?: string }
+  ) => {
+    const item = store.integrations.find((i) => i.id === integrationId);
+    if (!item) return;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      type: "integration_connected",
+      actor: store.organization.adminName,
+      actorEmail: store.organization.adminEmail,
+      target: item.name,
+      description: `Authenticated and linked live production connector for ${item.name} (${liveData?.remoteOrgName || credentials.orgOrTeam || "verified"}).`,
+      timestamp: "Just now",
+      integration: item.name,
+      severity: "success",
+    };
+
+    const updated = {
+      ...store,
+      integrations: store.integrations.map((i) =>
+        i.id === integrationId
+          ? {
+              ...i,
+              status: "connected" as const,
+              connectionType: "live" as const,
+              credentials: {
+                ...credentials,
+                token: credentials.token ? `${credentials.token.slice(0, 4)}...${credentials.token.slice(-4)}` : undefined,
+                lastVerifiedAt: new Date().toISOString(),
+              },
+              liveData,
+              membersCount: liveData?.remoteMemberCount || i.membersCount || 1,
+              lastSync: "Just now (Live)",
+            }
+          : i
+      ),
+      activities: [activity, ...store.activities],
+    };
+    saveStore(updated);
+  };
+
   const createJitGrant = (
     memberId: string,
     integration: string,
@@ -1120,6 +1177,7 @@ export function useAirlockStore() {
     removeMember,
     toggleMemberStatus,
     toggleIntegration,
+    connectIntegrationLive,
     createJitGrant,
     revokeJitGrant,
     addPolicy,
