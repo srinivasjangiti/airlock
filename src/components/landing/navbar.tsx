@@ -7,6 +7,41 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { hasClerkPublishableKey } from "@/lib/clerk-config";
+
+function ClerkAuthButtons() {
+  const auth = useAuth();
+  if (auth.isSignedIn) {
+    return (
+      <Button size="sm" asChild>
+        <Link href="/dashboard">Dashboard</Link>
+      </Button>
+    );
+  }
+  return (
+    <>
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/sign-in">Sign In</Link>
+      </Button>
+      <Button size="sm" asChild className="shadow-sm">
+        <Link href="/sign-up">Get Started Free</Link>
+      </Button>
+    </>
+  );
+}
+
+function SandboxAuthButtons() {
+  return (
+    <>
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/sign-in">Sign In</Link>
+      </Button>
+      <Button size="sm" asChild className="shadow-sm">
+        <Link href="/dashboard">Get Started Free</Link>
+      </Button>
+    </>
+  );
+}
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -17,13 +52,6 @@ const navLinks = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  let isSignedIn = false;
-  try {
-    const auth = useAuth();
-    isSignedIn = !!auth?.isSignedIn;
-  } catch {
-    isSignedIn = false;
-  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
@@ -66,20 +94,7 @@ export function Navbar() {
               </Link>
             </Button>
 
-            {isSignedIn ? (
-              <Button size="sm" asChild>
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/sign-in">Sign In</Link>
-                </Button>
-                <Button size="sm" asChild className="shadow-sm">
-                  <Link href="/sign-up">Get Started Free</Link>
-                </Button>
-              </>
-            )}
+            {hasClerkPublishableKey ? <ClerkAuthButtons /> : <SandboxAuthButtons />}
           </div>
 
           {/* Mobile menu toggle */}

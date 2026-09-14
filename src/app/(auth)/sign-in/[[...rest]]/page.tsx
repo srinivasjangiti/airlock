@@ -6,14 +6,10 @@ import { Shield, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { hasClerkPublishableKey } from "@/lib/clerk-config";
 
 export default function SignInPage() {
-  const hasClerkKey =
-    typeof process !== "undefined" &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk";
-
-  if (hasClerkKey) {
+  if (hasClerkPublishableKey) {
     return <SignIn />;
   }
 
