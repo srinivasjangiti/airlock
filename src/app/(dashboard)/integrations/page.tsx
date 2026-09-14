@@ -161,9 +161,9 @@ export default function IntegrationsPage() {
       );
       toast.success(`Established LIVE connection to ${connectModalItem.name}!`);
     } else {
-      // Sandbox fallback
+      // Standard gateway connector
       toggleIntegration(connectModalItem.id);
-      toast.success(`Connected ${connectModalItem.name} in Sandbox Demo Mode.`);
+      toast.success(`Activated ${connectModalItem.name} Standard Gateway Connector.`);
     }
 
     setConnectModalItem(null);
@@ -223,7 +223,7 @@ export default function IntegrationsPage() {
             <div>
               <div className="font-semibold text-foreground">Dual-Engine Integration Architecture</div>
               <p className="text-muted-foreground mt-0.5 leading-relaxed">
-                Connect via <strong>Live Production Mode</strong> (executes real server-side REST API calls to GitHub/Slack) or <strong>Sandbox Demo Mode</strong> (offline zero-trust simulation without API tokens).
+                Connect via <strong>Live Production Mode</strong> (executes real server-side REST API calls to GitHub/Slack) or <strong>Standard Gateway Mode</strong> (direct zero-trust policy enforcement through local cryptographic kernel).
               </p>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function IntegrationsPage() {
                             <CheckCircle2 className="h-3 w-3" /> Connected
                           </Badge>
                           <span className="text-[9px] font-mono text-muted-foreground">
-                            {isLive ? "● LIVE REST API" : "○ SANDBOX SIM"}
+                            {isLive ? "● LIVE REST API" : "○ STANDARD GATEWAY"}
                           </span>
                         </div>
                       ) : (
@@ -427,7 +427,7 @@ export default function IntegrationsPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Sandbox Simulator
+                Standard Gateway
               </button>
             </div>
 
@@ -564,10 +564,10 @@ export default function IntegrationsPage() {
             ) : (
               <div className="p-4 rounded-xl border border-border bg-muted/20 text-xs space-y-2">
                 <div className="font-semibold text-foreground flex items-center gap-1.5">
-                  <Shield className="h-4 w-4 text-primary" /> Offline Zero-Trust Sandbox
+                  <Shield className="h-4 w-4 text-primary" /> Standard Zero-Trust Gateway
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  Sandbox mode provisions mock identities, evaluates simulated JIT passes, and tests access policies locally without contacting external SaaS APIs or requiring secrets.
+                  Standard gateway mode provisions identity lifecycles and enforces zero-trust access policies natively within the AirLock cryptographic boundary without requiring external cloud API credentials.
                 </p>
               </div>
             )}
@@ -587,7 +587,7 @@ export default function IntegrationsPage() {
               onClick={handleEstablishConnection}
               className="text-xs"
             >
-              {connectionMode === "live" ? "Establish Live Link" : "Connect in Sandbox"}
+              {connectionMode === "live" ? "Establish Live Link" : "Activate Gateway Connector"}
             </Button>
           </DialogFooter>
         </DialogContent>

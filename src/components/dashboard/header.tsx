@@ -24,14 +24,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ title, description, actions }: DashboardHeaderProps) {
-  const { store, resetToDemo, clearToClean } = useAirlockStore();
-  const [resetting, setResetting] = useState(false);
-
-  const handleResetDemo = () => {
-    setResetting(true);
-    resetToDemo();
-    setTimeout(() => setResetting(false), 500);
-  };
+  const { store } = useAirlockStore();
 
   const recentNotifications = store.activities.slice(0, 4);
 
@@ -42,8 +35,8 @@ export function DashboardHeader({ title, description, actions }: DashboardHeader
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-lg font-bold tracking-tight">{title}</h1>
-            <Badge variant="outline" className="text-[10px] uppercase font-semibold text-primary border-primary/30 hidden sm:inline-flex">
-              Sandbox Active
+            <Badge variant="outline" className="text-[10px] uppercase font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hidden sm:inline-flex">
+              Zero-Trust: Enforced
             </Badge>
           </div>
           {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
@@ -62,19 +55,6 @@ export function DashboardHeader({ title, description, actions }: DashboardHeader
             <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border border-border bg-card px-1 font-mono text-[9px] font-medium text-muted-foreground">
               ⌘K
             </kbd>
-          </Button>
-
-          {/* Quick Demo Data Seed / Reset */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResetDemo}
-            disabled={resetting}
-            title="Reset sample enterprise data"
-            className="text-xs h-8 gap-1.5 border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-foreground hidden lg:inline-flex"
-          >
-            <RefreshCw className={`h-3 w-3 ${resetting ? "animate-spin text-primary" : ""}`} />
-            {resetting ? "Resetting..." : "Reset Demo Data"}
           </Button>
 
           {/* Theme Toggle */}

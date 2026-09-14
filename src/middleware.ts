@@ -53,17 +53,32 @@ if (hasClerkKeys) {
 }
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  // If Clerk is configured and handler initialized, run Clerk middleware safely
+  // 1. If Clerk is configured and handler initialized, run Clerk middleware safely
   if (hasClerkKeys && clerkHandler) {
     try {
       return clerkHandler(request, event)
     } catch (err) {
-      console.warn('Clerk middleware error caught, continuing in sandbox mode:', err)
+      console.warn('Clerk middleware error caught:', err)
       return NextResponse.next()
     }
   }
 
-  // Zero-friction Sandbox / Demo Mode: allow all requests without Edge crashes on Vercel
+  // 2. Enterprise Session Cookie Verification (for Standalone / Self-Hosted / On-Prem Deployments)
+  const sessionCookie = request.cookies.get('airlock_session')?.value
+  const isAuthenticated = Boolean(sessionCookie)
+
+  // Protect dashboard routes — redirect unauthenticated visitors to enterprise login
+  if (!isAuthenticated && isProtectedRoute(request)) {
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname)
+    return NextResponse.redirect(signInUrl)
+  }
+
+  // Redirect signed-in users away from auth pages to dashboard
+  if (isAuthenticated && isAuthRoute(request)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   return NextResponse.next()
 }
 

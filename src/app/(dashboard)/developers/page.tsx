@@ -72,7 +72,7 @@ export default function DevelopersPage() {
   const [selectedScopes, setSelectedScopes] = useState<string[]>(["iam:read", "access:evaluate"]);
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
-  // API Sandbox State
+  // API Console & Playground State
   const [activeEndpoint, setActiveEndpoint] = useState<"evaluate" | "jit" | "members" | "audit">("evaluate");
   const [codeLang, setCodeLang] = useState<"curl" | "typescript" | "python" | "go">("curl");
   const [sandboxMemberId, setSandboxMemberId] = useState(store.members[0]?.id || "");
@@ -432,7 +432,7 @@ func main() {
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-primary" />
-                    Interactive API Sandbox
+                    Interactive API Console
                   </CardTitle>
                   <CardDescription className="text-xs">
                     Test live endpoint evaluation and copy production SDK code

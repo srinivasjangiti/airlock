@@ -49,9 +49,9 @@ export function Hero() {
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button size="xl" asChild className="group shadow-lg shadow-primary/20">
             <Link href="/dashboard">
-              <Sparkles className="h-4 w-4 mr-1 text-primary-foreground" />
-              Explore Interactive Sandbox
-              <ArrowRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
+              <Shield className="h-4 w-4 mr-1.5 text-primary-foreground" />
+              Launch Zero-Trust Console
+              <ArrowRight className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
           <Button size="xl" variant="outline" asChild className="group">

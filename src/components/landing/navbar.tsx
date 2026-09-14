@@ -30,14 +30,14 @@ function ClerkAuthButtons() {
   );
 }
 
-function SandboxAuthButtons() {
+function EnterpriseAuthButtons() {
   return (
     <>
       <Button variant="ghost" size="sm" asChild>
         <Link href="/sign-in">Sign In</Link>
       </Button>
       <Button size="sm" asChild className="shadow-sm">
-        <Link href="/dashboard">Get Started Free</Link>
+        <Link href="/dashboard">Access Console</Link>
       </Button>
     </>
   );
@@ -87,14 +87,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
 
-            <Button variant="outline" size="sm" asChild className="gap-1.5 border-primary/30 hover:bg-primary/5">
-              <Link href="/dashboard">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                Live Demo
-              </Link>
-            </Button>
-
-            {hasClerkPublishableKey ? <ClerkAuthButtons /> : <SandboxAuthButtons />}
+            {hasClerkPublishableKey ? <ClerkAuthButtons /> : <EnterpriseAuthButtons />}
           </div>
 
           {/* Mobile menu toggle */}

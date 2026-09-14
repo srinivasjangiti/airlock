@@ -56,8 +56,14 @@ export function AppSidebar() {
   const userName = store.organization.adminName;
   const userEmail = store.organization.adminEmail;
 
-  function handleSignOut() {
-    router.push("/");
+  async function handleSignOut() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Non-blocking logout network error
+    }
+    router.push("/sign-in");
+    router.refresh();
   }
 
   return (
@@ -208,7 +214,7 @@ export function AppSidebar() {
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4" />
-              Back to Home
+              Sign Out of Console
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

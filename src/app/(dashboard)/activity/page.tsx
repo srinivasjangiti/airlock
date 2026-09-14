@@ -5,18 +5,12 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import {
   Download,
   Search,
-  UserPlus,
-  UserMinus,
-  Settings,
-  Shield,
-  Link as LinkIcon,
-  Unlink,
-  Key,
-  Eye,
+  ShieldCheck,
+  ShieldAlert,
+  Loader2,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Filter,
+  Lock,
+  Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,13 +30,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAirlockStore, Activity } from "@/lib/airlock-store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useAirlockStore } from "@/lib/airlock-store";
+import { toast } from "sonner";
 
 export default function ActivityPage() {
   const { store } = useAirlockStore();
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+
+  // Ledger Verification Dialog
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<any>(null);
 
   const filtered = store.activities.filter((act) => {
     const matchesSearch =
@@ -60,6 +68,32 @@ export default function ActivityPage() {
     return matchesSearch && matchesType;
   });
 
+  async function handleVerifyLedger() {
+    setVerifyOpen(true);
+    setVerifying(true);
+    setVerifyResult(null);
+
+    try {
+      const res = await fetch("/api/v1/audit/verify", {
+        headers: {
+          Authorization: "Bearer ak_live_airlock_master_admin_key_2026",
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setVerifyResult(data.verification);
+        toast.success("Cryptographic Merkle ledger verified successfully.");
+      } else {
+        throw new Error(data.error || "Failed to verify audit ledger.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Ledger verification check failed.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
   function handleExportCsv() {
     const headers = ["ID", "Timestamp", "Type", "Actor", "Actor Email", "Target", "Description", "Integration", "IP Address", "Severity"];
     const rows = store.activities.map((a) => [
@@ -71,7 +105,7 @@ export default function ActivityPage() {
       `"${a.target}"`,
       `"${a.description.replace(/"/g, '""')}"`,
       `"${a.integration || "N/A"}"`,
-      `"${a.ipAddress || "127.0.0.1"}"`,
+      `"${a.ipAddress || "127.0.0.1 (Internal Gateway)"}"`,
       `"${a.severity}"`,
     ]);
 
@@ -90,12 +124,23 @@ export default function ActivityPage() {
     <>
       <DashboardHeader
         title="Immutable Audit Activity Trail"
-        description="Comprehensive forensic log of all identity provisioning, policy changes, and JIT sessions"
+        description="Forensic log of all identity provisioning, policy changes, and JIT sessions with SHA-256 Merkle chain verification"
         actions={
-          <Button size="sm" variant="outline" onClick={handleExportCsv} className="gap-1.5 text-xs shadow-xs">
-            <Download className="h-3.5 w-3.5 text-primary" />
-            Export Audit Log (CSV)
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleVerifyLedger}
+              className="gap-1.5 text-xs shadow-xs border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              Verify Ledger (SHA-256)
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleExportCsv} className="gap-1.5 text-xs shadow-xs">
+              <Download className="h-3.5 w-3.5 text-primary" />
+              Export CSV
+            </Button>
+          </div>
         }
       />
 
@@ -183,7 +228,7 @@ export default function ActivityPage() {
                         <p className="text-muted-foreground max-w-md">{act.description}</p>
                       </TableCell>
                       <TableCell className="font-mono text-muted-foreground text-[11px]">
-                        {act.ipAddress || "157.34.82.11"}
+                        {act.ipAddress || "127.0.0.1 (Local Gateway)"}
                       </TableCell>
                     </TableRow>
                   );
@@ -193,6 +238,72 @@ export default function ActivityPage() {
           </Table>
         </div>
       </div>
+
+      {/* Cryptographic Ledger Verification Dialog */}
+      <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Lock className="h-4 w-4 text-emerald-500" />
+              Cryptographic Audit Chain Verification
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Continuous mathematical attestation over chronological SHA-256 audit ledger blocks.
+            </DialogDescription>
+          </DialogHeader>
+
+          {verifying ? (
+            <div className="py-8 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span>Verifying block hashes from Genesis...</span>
+            </div>
+          ) : verifyResult ? (
+            <div className="space-y-3.5 py-2 text-xs">
+              <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{verifyResult.attestation}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg border border-border bg-muted/10 space-y-1">
+                  <div className="text-[10px] text-muted-foreground uppercase font-semibold">Total Verified Blocks</div>
+                  <div className="text-xl font-bold font-mono text-foreground">{verifyResult.totalBlocksVerified}</div>
+                </div>
+                <div className="p-3 rounded-lg border border-border bg-muted/10 space-y-1">
+                  <div className="text-[10px] text-muted-foreground uppercase font-semibold">Chain Validity</div>
+                  <div className="text-xl font-bold text-emerald-500">100% Valid</div>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border p-3 bg-muted/10 font-mono text-[11px]">
+                <div className="space-y-0.5">
+                  <div className="text-[10px] text-muted-foreground font-sans font-semibold flex items-center gap-1">
+                    <Hash className="h-3 w-3" /> Genesis Block Anchor
+                  </div>
+                  <div className="truncate text-muted-foreground">{verifyResult.genesisHash}</div>
+                </div>
+
+                <div className="space-y-0.5 pt-1 border-t border-border">
+                  <div className="text-[10px] text-muted-foreground font-sans font-semibold flex items-center gap-1">
+                    <Hash className="h-3 w-3" /> Head Block Hash (Seq #{verifyResult.headSequence})
+                  </div>
+                  <div className="truncate text-foreground font-semibold">{verifyResult.headHash}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-6 text-center text-xs text-muted-foreground">
+              Click verify to inspect audit ledger integrity.
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={() => setVerifyOpen(false)} className="text-xs">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

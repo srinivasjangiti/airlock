@@ -2,8 +2,8 @@
  * AirLock - Clerk Configuration & Capability Detection
  * 
  * Verifies whether valid Clerk credentials are provided in the current environment.
- * When not present (or using dummy placeholder strings), AirLock functions seamlessly
- * in offline zero-friction Sandbox Demo mode without triggering client/server errors.
+ * When not present, AirLock functions in self-hosted enterprise administrator mode
+ * with database session authentication.
  */
 
 export const hasClerkPublishableKey = Boolean(

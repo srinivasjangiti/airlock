@@ -37,7 +37,7 @@ export function CommandPalette() {
   const [query, setQuery] = React.useState("");
   const router = useRouter();
   const { setTheme, theme } = useTheme();
-  const { store, enforceMfaAll, revokeExpiredJitGrants, resetToDemo } = useAirlockStore();
+  const { store, enforceMfaAll, revokeExpiredJitGrants, clearToClean } = useAirlockStore();
 
   // Listen for Cmd+K / Ctrl+K
   React.useEffect(() => {
@@ -140,13 +140,13 @@ export function CommandPalette() {
       badge: "Theme",
     },
     {
-      label: "Reset Sample Enterprise Sandbox Data",
+      label: "Purge Local Workspace Cache",
       icon: RefreshCw,
       action: () => {
-        resetToDemo();
-        toast.success("Reset demo state to default enterprise sandbox!");
+        clearToClean();
+        toast.success("Reset local cache to authenticated baseline.");
       },
-      badge: "Reset",
+      badge: "System",
     },
   ].filter((item) => item.label.toLowerCase().includes(q) || item.badge.toLowerCase().includes(q));
 

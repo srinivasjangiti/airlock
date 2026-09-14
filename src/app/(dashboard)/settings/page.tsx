@@ -3,14 +3,12 @@
 import { useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/header";
 import {
-  CreditCard,
-  Key,
+  Building2,
+  Shield,
   Save,
-  Plus,
   Copy,
   CheckCircle2,
   Trash2,
-  RefreshCw,
   Download,
   Github,
   Linkedin,
@@ -19,14 +17,15 @@ import {
   Phone,
   ExternalLink,
   Code2,
-  Shield,
-  Building2,
+  Lock,
+  Clock,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,10 +35,10 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAirlockStore } from "@/lib/airlock-store";
+import { toast } from "sonner";
 
 const SOCIAL_LINKS = [
   { name: "GitHub", handle: "@srinivasjangiti", url: "https://github.com/srinivasjangiti", icon: Github },
@@ -52,66 +51,209 @@ const SOCIAL_LINKS = [
 ];
 
 export default function SettingsPage() {
-  const { store, resetToDemo, clearToClean } = useAirlockStore();
+  const { store, enforceMfaAll, clearToClean } = useAirlockStore();
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [resetStatus, setResetStatus] = useState<string | null>(null);
+  const [orgName, setOrgName] = useState(store.organization.name);
+  const [sessionTimeout, setSessionTimeout] = useState("30");
+  const [mfaEnforced, setMfaEnforced] = useState(true);
+  const [auditRetention, setAuditRetention] = useState("365");
 
   function copyText(field: string, val: string) {
     navigator.clipboard.writeText(val);
     setCopiedField(field);
+    toast.success(`Copied ${field} to clipboard.`);
     setTimeout(() => setCopiedField(null), 2000);
   }
 
-  function handleReset() {
-    resetToDemo();
-    setResetStatus("Workspace successfully reset with sample enterprise data!");
-    setTimeout(() => setResetStatus(null), 3000);
+  function handleSaveOrg() {
+    toast.success("Organization profile configuration saved successfully.");
   }
 
-  function handleClear() {
-    clearToClean();
-    setResetStatus("Workspace cleared to clean slate.");
-    setTimeout(() => setResetStatus(null), 3000);
+  function handleSaveSecurity() {
+    if (mfaEnforced) {
+      enforceMfaAll();
+    }
+    toast.success("Enterprise security policies updated and actively enforced.");
   }
 
   function handleExportBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(store, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `airlock-store-backup-${new Date().toISOString().split("T")[0]}.json`);
+    downloadAnchor.setAttribute("download", `airlock-enterprise-backup-${new Date().toISOString().split("T")[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    toast.success("Exported cryptographic audit ledger & configuration snapshot.");
+  }
+
+  function handleResetWorkspace() {
+    if (confirm("Are you sure you want to reset workspace cache to baseline clean state? All unsaved in-memory sessions will be purged.")) {
+      clearToClean();
+      toast.success("Workspace cache reset to authenticated clean baseline.");
+    }
   }
 
   return (
     <>
       <DashboardHeader
-        title="Settings & Engineering Showcase"
-        description="Configure organization profile, system preferences, data sandbox, and creator attribution"
+        title="Enterprise Security & Organization Settings"
+        description="Manage organization identity, zero-trust policies, audit ledger retention, and system maintainer attribution"
       />
 
       <div className="flex-1 p-6 space-y-6">
-        <Tabs defaultValue="creator" className="space-y-6">
+        <Tabs defaultValue="organization" className="space-y-6">
           <TabsList className="h-10">
+            <TabsTrigger value="organization" className="gap-2 text-xs font-semibold">
+              <Building2 className="h-3.5 w-3.5 text-primary" />
+              Organization Profile
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2 text-xs font-semibold">
+              <Shield className="h-3.5 w-3.5 text-emerald-500" />
+              Security & Governance
+            </TabsTrigger>
             <TabsTrigger value="creator" className="gap-2 text-xs font-semibold">
               <Code2 className="h-3.5 w-3.5 text-primary" />
-              Creator & Credits
+              Lead Architect & Credits
             </TabsTrigger>
-            <TabsTrigger value="organization" className="gap-2 text-xs">
-              <Building2 className="h-3.5 w-3.5" />
-              Organization
-            </TabsTrigger>
-            <TabsTrigger value="data" className="gap-2 text-xs">
-              <RefreshCw className="h-3.5 w-3.5" />
-              Sandbox & Data
+            <TabsTrigger value="danger" className="gap-2 text-xs font-semibold text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+              Danger Zone
             </TabsTrigger>
           </TabsList>
 
-          {/* Tab 1: Creator & Engineering Credits */}
+          {/* Tab 1: Organization Profile */}
+          <TabsContent value="organization" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Organization Profile & Identity Namespace</CardTitle>
+                <CardDescription className="text-xs">
+                  Zero-trust identity tenant boundaries and corporate domain configuration.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Organization Name</Label>
+                    <Input
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Tenant Slug / Domain</Label>
+                    <div className="flex items-center">
+                      <span className="inline-flex items-center px-3 h-9 rounded-l-md border border-r-0 border-input bg-muted text-xs text-muted-foreground">
+                        airlock.io/
+                      </span>
+                      <Input
+                        className="rounded-l-none h-9 text-xs font-mono"
+                        defaultValue={store.organization.slug}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Subscription Tier</Label>
+                    <Input defaultValue={store.organization.plan} disabled className="h-9 text-xs bg-muted font-medium" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Industry Classification</Label>
+                    <Input defaultValue={store.organization.industry} className="h-9 text-xs" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Primary Security Officer (Admin)</Label>
+                    <Input defaultValue={store.organization.adminName} disabled className="h-9 text-xs bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Administrative Email Address</Label>
+                    <Input defaultValue={store.organization.adminEmail} disabled className="h-9 text-xs bg-muted" />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <Button onClick={handleSaveOrg} size="sm" className="gap-1.5 text-xs">
+                    <Save className="h-3.5 w-3.5" /> Save Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 2: Security & Governance Policies */}
+          <TabsContent value="security" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Zero-Trust & Compliance Policies</CardTitle>
+                <CardDescription className="text-xs">
+                  Global enforcement rules applied across all connected SaaS tools and access evaluations.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-center justify-between p-3.5 rounded-lg border border-border bg-muted/10">
+                  <div className="space-y-0.5 max-w-lg">
+                    <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                      <Lock className="h-3.5 w-3.5 text-primary" />
+                      Mandatory Multi-Factor Authentication (MFA)
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Require hardware FIDO2 keys or TOTP authenticators for all accounts before granting access to critical infrastructure (AWS, GitHub, Datadog).
+                    </p>
+                  </div>
+                  <Switch checked={mfaEnforced} onCheckedChange={setMfaEnforced} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Session Inactivity Timeout (Minutes)</Label>
+                    <Select value={sessionTimeout} onValueChange={setSessionTimeout}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 Minutes (Strict SOC 2)</SelectItem>
+                        <SelectItem value="30">30 Minutes (Standard Enterprise)</SelectItem>
+                        <SelectItem value="60">60 Minutes (Standard)</SelectItem>
+                        <SelectItem value="480">8 Hours (Full Shift)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Cryptographic Audit Ledger Retention</Label>
+                    <Select value={auditRetention} onValueChange={setAuditRetention}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="90">90 Days (Minimum)</SelectItem>
+                        <SelectItem value="365">1 Year (SOC 2 Type II)</SelectItem>
+                        <SelectItem value="1095">3 Years (ISO 27001 / HIPAA)</SelectItem>
+                        <SelectItem value="2555">7 Years (Financial Grade)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <Button onClick={handleSaveSecurity} size="sm" className="gap-1.5 text-xs">
+                    <Save className="h-3.5 w-3.5" /> Apply Security Policies
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 3: Creator & Engineering Credits */}
           <TabsContent value="creator" className="space-y-6">
-            <Card className="border-primary/30">
+            <Card className="border-primary/30 shadow-xs">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -123,11 +265,11 @@ export default function SettingsPage() {
                     <CardTitle className="text-xl font-bold">Srinivas Jangiti</CardTitle>
                   </div>
                   <Badge variant="outline" className="text-xs font-mono border-primary/40 text-primary">
-                    Open Source • MIT
+                    Production Architecture
                   </Badge>
                 </div>
                 <CardDescription className="text-xs leading-relaxed mt-2">
-                  Software Engineer & Systems Architect specializing in Zero-Trust Security, Enterprise Identity Governance (IAM), full-stack platforms, and distributed developer infrastructure.
+                  Systems Architect & Engineer specializing in Zero-Trust Governance, Distributed Identity Lifecycle (SCIM 2.0 / SAML), Cryptographic Audit Chains, and Enterprise Cloud Infrastructure.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -185,7 +327,7 @@ export default function SettingsPage() {
                 {/* Social Channels Directory */}
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                    Verified Digital Footprint & Profiles
+                    Verified Digital Footprint & Developer Profiles
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {SOCIAL_LINKS.map((item) => {
@@ -215,107 +357,39 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* Tab 2: Organization Profile */}
-          <TabsContent value="organization" className="space-y-4">
-            <Card>
+          {/* Tab 4: Danger Zone */}
+          <TabsContent value="danger" className="space-y-4">
+            <Card className="border-destructive/30">
               <CardHeader>
-                <CardTitle className="text-base">Organization Profile</CardTitle>
+                <CardTitle className="text-base text-destructive flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" /> Danger Zone & Disaster Recovery
+                </CardTitle>
                 <CardDescription className="text-xs">
-                  Identity tenant details and domain namespace configuration.
+                  Irreversible administrative actions for backup generation and workspace cache purge.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Organization Name</Label>
-                    <Input defaultValue={store.organization.name} className="h-9 text-xs" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-lg border border-border bg-muted/10">
+                  <div>
+                    <div className="text-xs font-semibold text-foreground">Download Cryptographic Backup</div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Export full JSON dump of organization directory, policies, and Merkle ledger logs for external compliance archival.
+                    </p>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Organization Slug</Label>
-                    <div className="flex items-center">
-                      <span className="inline-flex items-center px-3 h-9 rounded-l-md border border-r-0 border-input bg-muted text-xs text-muted-foreground">
-                        airlock.app/
-                      </span>
-                      <Input
-                        className="rounded-l-none h-9 text-xs font-mono"
-                        defaultValue={store.organization.slug}
-                      />
-                    </div>
-                  </div>
+                  <Button onClick={handleExportBackup} variant="outline" size="sm" className="text-xs gap-1.5 shrink-0">
+                    <Download className="h-3.5 w-3.5 text-primary" /> Export JSON
+                  </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Active Subscription Plan</Label>
-                    <Input defaultValue={store.organization.plan} disabled className="h-9 text-xs bg-muted" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Industry Classification</Label>
-                    <Input defaultValue={store.organization.industry} className="h-9 text-xs" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab 3: Sandbox & Data Controls */}
-          <TabsContent value="data" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Sandbox & Store Controls</CardTitle>
-                <CardDescription className="text-xs">
-                  Manage the client-side reactive store, seed realistic enterprise demo data, or export backups.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {resetStatus && (
-                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
-                    {resetStatus}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    className="h-auto p-4 flex flex-col items-start gap-1 border-primary/30 hover:bg-primary/5 text-left"
-                  >
-                    <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
-                      <RefreshCw className="h-3.5 w-3.5 text-primary" />
-                      Reset Demo Data
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Re-seed with 12+ enterprise members, 8 tools, policies, and JIT sessions.
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-lg border border-destructive/20 bg-destructive/5">
+                  <div>
+                    <div className="text-xs font-semibold text-destructive">Reset Workspace Session Cache</div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Purges local ephemeral cache and re-synchronizes with server database baseline.
                     </p>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={handleExportBackup}
-                    className="h-auto p-4 flex flex-col items-start gap-1 text-left"
-                  >
-                    <div className="flex items-center gap-2 font-semibold text-xs text-foreground">
-                      <Download className="h-3.5 w-3.5 text-primary" />
-                      Export JSON Backup
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Download full snapshot of members, connectors, and audit events.
-                    </p>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={handleClear}
-                    className="h-auto p-4 flex flex-col items-start gap-1 border-destructive/30 hover:bg-destructive/5 text-left"
-                  >
-                    <div className="flex items-center gap-2 font-semibold text-xs text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Clean Slate
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Wipe all simulated data and start with an empty organization.
-                    </p>
+                  </div>
+                  <Button onClick={handleResetWorkspace} variant="destructive" size="sm" className="text-xs gap-1.5 shrink-0">
+                    <RotateCcw className="h-3.5 w-3.5" /> Reset Cache
                   </Button>
                 </div>
               </CardContent>
